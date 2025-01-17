@@ -1,0 +1,21 @@
+---
+batch_size: 10
+data_sources:
+  - name: "test_detector"
+    type: "sample"
+    seed: 10
+    samples: 100
+    sample_config: "sample1.yml"
+
+history_interval: 600
+history_retention: 18
+history_recent_retention: 6
+kmeans:
+  k: 10
+  max_iterations: 10
+  n_rounds: 10
+  threshold: 0.1
+
+lambda1_threshold: 2.0 # lambda for the 1st filtering
+lambda2_threshold: 1.0 # lambda for the 2nd filtering
+lambda3_threshold: 2.0 # lambda for the final detection

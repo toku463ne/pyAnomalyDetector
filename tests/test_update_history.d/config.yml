@@ -1,0 +1,8 @@
+---
+batch_size: 10
+data_sources:
+  - name: "test_update_history"
+    type: "sample"
+    seed: 10
+    samples: 100
+    sample_config: "sample1.yml"

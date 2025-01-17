@@ -1,0 +1,73 @@
+---
+##################################################
+#  admdb: PostgreSQL database for AnomDec admin
+##################################################
+admdb:
+  host: 127.0.0.1
+  user: anomdec_adm
+  password: '{{ ADM_DB_PASSWORD }}'
+  dbname: anomdec
+  port: 5432
+
+
+##################################################
+#  data_sources: List of data sources
+#  supported types: zabbix_psql, http_csv
+##################################################
+data_sources:
+  - name: "zabbix"
+    type: "psql"
+    host: 127.0.0.1
+    dbname: zabbix
+    user: anomdec_monitor
+    password: '{{ ZABBIX_DB_PASSWORD }}'
+    port: 5432
+
+##################################################
+#  view_sources: List of view sources
+#  supported types: zabbix_dashboard
+##################################################
+view_sources:
+  - name: "zabbix"
+    type: "zabbix_dashboard"
+    api_url: "http://localhost/zabbix"
+    user: "admin"
+    password: "zabbix"
+
+
+##################################################
+#  trends: Configuration for trend analysis
+##################################################
+trends_interval: 86400
+trends_retention: 14
+
+##################################################
+#  history: Configuration for history analysis
+##################################################
+history_interval: 600
+history_retention: 18
+history_recent_retention: 6
+
+##################################################
+#  kmeans clustering params
+##################################################
+kmeans:
+  k: 10
+  threshold: 0.1
+  max_iterations: 10
+  n_rounds: 10
+
+
+##################################################
+#  anomaly detection params
+##################################################
+lambda1_threshold: 3.0 # lambda for the 1st filtering
+lambda2_threshold: 1.0 # lambda for the 2nd filtering (for history_retention)
+lambda3_threshold: 2.0 # lambda for the 2nd filtering (for history_recent_retention)
+
+##################################################
+#  logging: No logging by default
+##################################################
+#logging:
+#  level: INFO
+#  file: "{{ LOG_DIR }}/anomdec.log"

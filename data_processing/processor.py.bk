@@ -1,0 +1,172 @@
+import pandas as pd
+import numpy as np
+import utils.config_loader as config_loader
+import data_getter
+from models.models_set import ModelsSet
+import utils.normalizer as normalizer
+import utils.kmeans as kmeans
+
+def _import_item(dg_df, stats_df: pd.DataFrame, 
+                 base_clocks: list[int], itemIds: list[int], stats_model, values_model):
+    old_df = values_model.read_values(itemIds, endep=base_clocks[0]-1)
+    for i in range(len(itemIds)):
+        block = dg_df[dg_df["itemid"] == itemIds[i]]
+        if len(block) == 0:
+            continue
+
+        values: list[float] = normalizer.fit_to_base_clocks(base_clocks, block["clock"].tolist(), block["value"].tolist())
+        
+        # calculate stats
+        sum = np.sum(values)
+        sqr_sum = np.sum(values ** 2)
+        cnt = len(values)
+
+        # calculate old stats
+        old_block = old_df[old_df["itemid"] == itemIds[i]]
+        old_sum = np.sum(old_block["value"])
+        old_sqr_sum = np.sum(old_block["value"] ** 2)
+        old_cnt = len(old_block)
+
+        # update stats
+        sum = stats_df.loc[stats_df["itemid"] == itemIds[i], "sum"] + sum - old_sum
+        sqr_sum = stats_df.loc[stats_df["itemid"] == itemIds[i], "sqr_sum"] + sqr_sum - old_sqr_sum
+        cnt = stats_df.loc[stats_df["itemid"] == itemIds[i], "cnt"] + cnt - old_cnt
+
+        # calculate mean and std
+        mean = sum / cnt
+        std = np.sqrt((sqr_sum - cnt * mean ** 2) / (cnt))
+
+        # remove old values
+        values_model.remove_old_data(base_clocks[0]-1)
+
+        # update values
+        stats_model.upsert_stats(itemIds[i], sum, sqr_sum, cnt, base_clocks[0], base_clocks[-1], mean, std, base_clocks[-1])
+    
+
+def _import_batch(dg, ms, itemIds, batch_itemIds, gen_trend_from_history, calc_trend_from_history, 
+                   history_base_clocks, trend_base_clocks, trend_interval):
+    dg_df: pd.DataFrame
+    stats_df: pd.DataFrame
+    if gen_trend_from_history:
+        # import history data
+        dg_df = dg.get_history_data(history_base_clocks[0], history_base_clocks[-1], itemIds)
+        stats_df = ms.history_stats.read_stats(itemIds)
+        _import_item(dg_df, stats_df, history_base_clocks, batch_itemIds, ms.history_stats, ms.history)
+
+    if calc_trend_from_history:
+        return
+
+    if gen_trend_from_history:
+        # get recent history data to create latest trend data
+        dg_df = dg.get_history_data(trend_base_clocks[0], trend_base_clocks[-1] + trend_interval, itemIds)
+    else:
+        dg_df = dg.get_trend_data(trend_base_clocks[0], trend_base_clocks[-1], itemIds)
+    stats_df = ms.trend_stats.read_stats(itemIds)
+    _import_item(dg_df, stats_df, trend_base_clocks, batch_itemIds, ms.trend_stats, ms.trends)
+    
+
+def _import_data(dg, itemIds, ms, history_base_clocks, trend_base_clocks, trend_interval, history_interval):
+    batch_size = config_loader.conf["batch_size"]
+    gen_trend_from_history = len(history_base_clocks) > 0
+
+    # Initialize data
+    if not gen_trend_from_history:
+        ms.initialize()
+
+    if len(history_base_clocks) == 0:
+        calc_trend_from_history = False
+    else:
+        calc_trend_from_history = history_base_clocks[-1] + history_interval < trend_base_clocks[-1] + trend_interval
+
+    for i in range(0, len(itemIds), batch_size):
+        batch_itemIds = itemIds[i:i+batch_size]
+        # Data Conversion / Trend statistics
+        _import_batch(dg, ms, itemIds, batch_itemIds, gen_trend_from_history, calc_trend_from_history, 
+                      history_base_clocks, trend_base_clocks, trend_interval)
+
+"""
+    - calculate h_mean: the mean of each items in the `anomdec.history` table
+    - calculate lambda1: (h_mean - t_mean)/t_std  of each items
+    - if lambda1 > lambda1_threshold, store the item in the dict variable latest_items
+"""
+def _first_detection(itemIds: list[int], ms: ModelsSet, lambda1_threshold: float) -> pd.DataFrame:
+    batch_size = config_loader.BATCH_SIZE
+    anomaly_items = []
+
+    for i in range(0, len(itemIds), batch_size):
+        batch_itemIds = itemIds[i:i+batch_size]
+        h_stats_df = ms.history_stats.read_stats(batch_itemIds).set_index("itemid")
+        t_stats_df = ms.trend_stats.read_stats(batch_itemIds).set_index("itemid")
+
+        # merge dataframes
+        stats_df = pd.merge(h_stats_df, t_stats_df, on="itemid", suffixes=('_h', '_t'))
+
+        # calculate lambda1
+        stats_df["lambda1"] = (stats_df["mean_h"] - stats_df["mean_t"]) / stats_df["std_t"]
+
+        # filter items
+        target_df = stats_df[stats_df["lambda1"] > lambda1_threshold][["mean_t", "std_t"]]
+        anomaly_items.extend(target_df.index.tolist())
+
+    return pd.DataFrame(anomaly_items, columns=["itemid"]).merge(t_stats_df, 
+                            left_on="itemid", right_index=True)[["itemid", "mean_t", "std_t"]]
+        
+
+"""
+- Normalize recent history:
+    - For item in anomaly_items:
+      - Normalize item data in `anomdec.history` table the way below:
+        - Calculate (value - t_mean)/t_std
+        - If the absolute value goes over lambda2_max, change it so that the absolute value be lambda2_max
+        - If the absolute value goes under lamba1_threshold, set it as zero
+"""
+def _normalize_recent_history(itemIds: list[int], ms: ModelsSet, anomaly_items: pd.DataFrame, 
+                              lambda2_max: float, lambda1_threshold: float) -> tuple[dict[int], list[int]]:
+    h_df = ms.history.read_values(itemIds)
+    # merge dataframes
+    stats_df = pd.merge(h_df, anomaly_items, on="itemid")
+    stats_df["value"] = (stats_df["value"] - stats_df["mean_t"]) / stats_df["std_t"]
+    stats_df["value"] = stats_df["value"].clip(lower=lambda1_threshold, upper=lambda2_max)
+    stats_df["value"] = np.where((stats_df["value"] < lambda1_threshold) & (stats_df["value"] > -lambda1_threshold), 
+                                 0, stats_df["value"])
+
+    # get list of clocks of the first itemid
+    base_clocks = h_df[h_df["itemid"] == anomaly_items["itemid"].iloc[0]]["clock"].tolist()
+
+    stats_df.groupby("itemid")["value"].apply(pd.Series).to_dict(), base_clocks
+
+
+        
+
+
+def run(data_source, 
+        trend_base_clocks: list[int], 
+        history_base_clocks: list[int],
+        trend_interval: int,
+        history_interval: int,
+        itemIds: list[int] = []):
+    dg = data_getter.get_data_getter(data_source)
+    itemIds = dg.get_itemIds(itemIds=itemIds)
+    ms = ModelsSet(data_source["name"])
+
+    # initialize data / import history / import trends / calculate stats
+    _import_data(dg, itemIds, ms, history_base_clocks, trend_base_clocks, trend_interval, history_interval)
+    
+    # 1st detection
+    anom_df = _first_detection(itemIds, ms, data_source["lambda1_threshold"], 
+                                    history_base_clocks[0], trend_base_clocks[-1] + trend_interval)
+
+    # Normalize recent history
+    norm_dict = _normalize_recent_history(itemIds, ms, anom_df, 
+                                    data_source["lambda2_max"], data_source["lambda1_threshold"])
+
+
+    # classify the normalized data by a customized k-means
+    clusters = kmeans.kmeans(norm_dict, data_source["k"], data_source["threshold"], data_source["max_iter"])
+
+    # sum values of each cluster
+    cluster_values = {}
+    for itemid, value in norm_dict.items():
+        cluster_values[clusters[itemid]] = cluster_values.get(clusters[itemid], 0) + value
+
+        

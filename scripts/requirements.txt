@@ -1,0 +1,13 @@
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
+scipy
+psycopg2-binary
+jinja2
+#psycopg2
+pyyaml
+cython
+#Cython
+pyzabbix

@@ -1,0 +1,235 @@
+- name: daily_traffic1
+  itemid: 1
+  hostid: 1
+  trend: 
+    type: oneweek_normal_distribution_wave
+    min_val: 1000000
+    max_val: 10000000
+    unitsecs: 3600
+    noise_rate: 0.05
+    repeat: 2
+  history:
+    type: generate_monotonic_values
+    start: 1000000
+    end: 20000000
+    unitsecs: 300
+
+- name: daily_traffic2
+  itemid: 2
+  hostid: 1
+  trend:
+    type: oneweek_normal_distribution_wave
+    min_val: 500000
+    max_val: 5000000
+    unitsecs: 3600
+    noise_rate: 0.05
+    repeat: 2
+  history:
+    type: generate_monotonic_values
+    start: 500000
+    end: 5500000
+    unitsecs: 300
+
+- name: daily_traffic3
+  itemid: 3
+  hostid: 1
+  trend:
+    type: oneweek_normal_distribution_wave
+    min_val: 500000
+    max_val: 3000000
+    unitsecs: 1800
+    noise_rate: 0.05
+    repeat: 2
+  history:
+    type: generate_monotonic_values
+    start: 500000
+    end: 6000000
+    unitsecs: 60
+
+- name: weekly_job1
+  itemid: 4
+  hostid: 1
+  trend:
+    type: convex_wave
+    min_val: 100
+    max_val: 10000
+    unitsecs: 3600
+    flat_rate: 0.9
+    repeat: 2
+  history:
+    type: generate_monotonic_values
+    start: 100
+    end: 100
+    unitsecs: 300
+
+- name: weekly_job2
+  itemid: 5
+  hostid: 1
+  trend:
+    type: convex_wave
+    min_val: 100
+    max_val: 20000
+    unitsecs: 3600
+    flat_rate: 0.8
+    repeat: 2
+  history:
+    type: generate_monotonic_values
+    start: 100
+    end: 40000
+    unitsecs: 300
+
+- name: increase_monotonic1
+  itemid: 6
+  hostid: 6
+  trend:
+    type: generate_monotonic_values
+    start: 100
+    end: 114
+    unitsecs: 3600
+  history:
+    type: generate_monotonic_values
+    start: 114
+    end: 200
+    unitsecs: 300
+
+- name: increase_monotonic2
+  itemid: 7
+  hostid: 7
+  trend:
+    type: generate_monotonic_values
+    start: 1000
+    end: 1028
+    unitsecs: 3600
+  history: # anomaly case
+    type: normal_distribution_wave
+    min_val: 1028
+    max_val: 2000
+    unitsecs: 300
+
+- name: increase_monotonic3
+  itemid: 8
+  hostid: 8
+  trend:
+    type: generate_monotonic_values
+    start: 500
+    end: 528
+    unitsecs: 3600
+  history:
+    type: generate_monotonic_values
+    start: 528
+    end: 1000
+    unitsecs: 300
+
+- name: decrease_monotonic1
+  itemid: 9
+  hostid: 9
+  trend:
+    type: generate_monotonic_values
+    start: 214
+    end: 200
+    unitsecs: 3600
+  history:
+    type: generate_monotonic_values
+    start: 200
+    end: 0
+    unitsecs: 300
+
+- name: decrease_monotonic2
+  itemid: 10
+  hostid: 10
+  trend:
+    type: generate_monotonic_values
+    start: 1014
+    end: 1000
+    unitsecs: 3600
+  history: # anomaly case
+    type: normal_distribution_wave
+    min_val: 1000
+    max_val: 2000
+    unitsecs: 300
+    inverse: true
+
+- name: decrease_monotonic3
+  itemid: 11
+  hostid: 11
+  trend:
+    type: generate_monotonic_values
+    start: 100
+    end: 86
+    unitsecs: 3600
+  history:
+    type: generate_monotonic_values
+    start: 86
+    end: 0
+    unitsecs: 300
+  
+- name: constant1
+  itemid: 12
+  hostid: 12
+  trend:
+    type: generate_monotonic_values
+    start: 400
+    end: 400
+    unitsecs: 3600
+  history:
+    type: generate_monotonic_values
+    start: 401
+    end: 800
+    unitsecs: 300
+
+- name: constant2
+  itemid: 13
+  hostid: 13
+  trend:
+    type: generate_monotonic_values
+    start: 1000
+    end: 1000
+    unitsecs: 3600
+  history:
+    type: generate_monotonic_values
+    start: 1000
+    end: 0
+    unitsecs: 300
+
+- name: stairs1
+  itemid: 14
+  hostid: 14
+  trend:
+    type: stairs_wave
+    start: 1000
+    end: 1100
+    unitsecs: 3600
+  history:
+    type: generate_monotonic_values
+    start: 1100
+    end: 2101
+    unitsecs: 300
+
+- name: stairs2
+  itemid: 15
+  hostid: 15
+  trend:
+    type: stairs_wave
+    start: 1000
+    end: 2000
+    unitsecs: 3600
+  history:
+    type: generate_monotonic_values
+    start: 2000
+    end: 4010
+    unitsecs: 300
+  
+- name: stairs3
+  itemid: 16
+  hostid: 16
+  trend:
+    type: stairs_wave
+    start: 1000
+    end: 1014
+    unitsecs: 3600
+  history:
+    type: generate_monotonic_values
+    start: 1014
+    end: 3015
+    unitsecs: 300
+    

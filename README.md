@@ -20,53 +20,45 @@ GRANT ALL PRIVILEGES ON DATABASE anomdec TO anomdec_adm;
 - load config:
 load `default.yml` and an additional config file if provided
 
-- Initialize data (only the first time):
-    Convert `trends` from the data source into the `anomdec.trends` table.
-  
-- Data Conversion:
-    Convert `history` from the data source into the `anomdec.trends`, `anomdec.history` table.
-    Data will drop into a single interval defined in the config file.
-  
-- Trend statistics:
-    Calculate statistics per item and store them in the `anomdec.trends_stats` table.
-      - sum: sum of values
+- Initialize or update trends data:
+    Get `trends` from the data source and save the following values to `anomdec.trends_stats` table.  
+	  - sum: sum of values
       - sqr_sum: sum of square of values
       - count: count of values
-      - start: start epoch
-      - end: end epoch
       - t_mean: average
       - t_std: standard deviation
-      - last_update: last updated epoch
+  
+- Data Conversion:
+    Convert `history` from the data source into the `anomdec.history` table.  
+    Data will drop into a single interval defined in the config file.  
+  
   
 - 1st detection:
     - calculate h_mean: the mean of each items in the `anomdec.history` table
     - calculate lambda1: (h_mean - t_mean)/t_std  of each items
     - if lambda1 > lambda1_threshold, store the item in the dict variable latest_items
     
+- 2nd detection:
+  for items in latest_items variable
+	- Get `trends` from the data source filtering by
+		lambda2: (value - t_mean)/std > lambda2_threshold
+	- calculate t2_mean, t2_std of the filtered values
+    - calculate lambda3: (h_mean - t2_mean)/t2_std
+	- if lambda3 > lambda3_threshold, store the item in the dict variable latest_items
+	
 - Normalize recent history:
     - For item in latest_items:
-      - Normalize item data in `anomdec.history` table the way below:
-        - Calculate (value - t_mean)/t_std
-        - If the absolute value goes over lambda2_max, change it so that the absolute value be lambda2_max
-        - If the absolute value goes under lamba1_threshold, set it as zero
+      - Normalize item data in `anomdec.history` so that max=1 and min=-0
 
 - Summarize recent data:
-    - If the item has cache and the pattern matches, rule out the item
     - classify the normalized data by a customized k-means algorithm  
-    - calculate score: the sum of data in the same class 
-    - Save the topN scores and save it to `anomdec.scores` table.
-        - epoch: the current epoch time
-        - count: the number of members in the cluster
-        - score: the score
-    - Remove the scores older than trends_retention
-  
-- Cache abnormal patterns
-    - shift data so that the beginning of the abnormal data comes first
-    - keep it per item for history_retention
 
-- Final detection:
-    - Calculate statistics of the score in `anomdec.scores` table
-    - If the new score is over lambda3_threshold then detect the score as abnormal
+- View the result
+	- Show all items filtered by 2nd detection somehow (zabbix dashboard etc)  
+  
+- Alarming:
+	- If there are items from multiple hosts in the same k-means group, send an alarm.
+    
 
   
 ## File Structure

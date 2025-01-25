@@ -1,3 +1,4 @@
+from typing import List, Tuple
 
 from db.postgresql import PostgreSqlDB
 import utils.config_loader as config_loader
@@ -18,5 +19,22 @@ class Model:
     def truncate(self):
         self.db.exec_sql(f"TRUNCATE TABLE {self.table_name};")
         
+    def check_conn(self) -> bool:
+        ok = self.db.table_exists(self.name, self.data_source_name)
+        if ok == False:
+            print(f"model {self.data_source_name}.{self.name} does not exist")
+        return ok
     
-    
+    def separate_existing_itemIds(self, itemIds: List[int]) -> Tuple[List[int],List[int]]:
+        sql = f"SELECT distinct itemid FROM {self.table_name}"
+        where = []
+        if len(itemIds) > 0:
+            where.append(f"itemid IN ({','.join(map(str, itemIds))})")
+        
+        cur = self.db.exec_sql(sql)
+        existing = []
+        for (itemId,) in cur:
+            existing.append(itemId)
+
+        nonexisting = [item for item in itemIds if item not in existing]
+        return existing, nonexisting

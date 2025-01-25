@@ -1,0 +1,26 @@
+host_groups:
+  - app/cal/sug5k
+
+admdb:
+  host: 192.168.4.91
+  user: anomdec
+  password: '{{ ADM_DB_PASSWORD }}'
+  dbname: anomdec
+  port: 5432
+
+data_sources:
+  - name: "test_zabbix"
+    type: "zabbix"
+    host: 192.168.32.101
+    dbname: zabbix
+    user: monitoring
+    password: '{{ ZABBIX_DB_PASSWORD }}'
+    port: 5432
+
+view_sources:
+  - name: "test_zabbix"
+    type: "zabbix_dashboard"
+    dashboard_name: "anomaly_check_new"
+    api_url: "http://192.168.32.10/zabbix"
+    user: "{{ API_USER }}"
+    password: "{{ API_PASSWORD }}"

@@ -1,3 +1,5 @@
+from typing import List
+import time
 
 import utils.config_loader as config_loader
 import data_processing.trends_stats as trends_stats
@@ -8,13 +10,23 @@ from models.models_set import ModelsSet
 
 def update_stats(config_file: str, 
                 endep: int, diff_startep: int =0, 
-                item_names: list[str] = [], 
-                host_names: list[str] = [], 
-                group_names: list[str] = [],
-                initialize: bool = False):
+                item_names: List[str] = None, 
+                host_names: List[str] = None, 
+                group_names: List[str] = None,
+                initialize: bool = False, max_itemIds = 0):
     config_loader.load_config(config_file)
     conf = config_loader.conf
+    
+    if item_names is None:
+        item_names = conf.get('item_names', [])
+    if host_names is None:
+        host_names = conf.get('host_names', [])
+    if group_names is None:
+        group_names = conf.get('group_names', [])
     data_sources = conf['data_sources']
+
+    if endep == 0:
+        endep = int(time.time())
     
     # don't include the very last epoch
     endep -= 1
@@ -25,6 +37,9 @@ def update_stats(config_file: str,
         startep: int = 0
         diff_startep: int = 0
         ms = ModelsSet(data_source["name"])
+
+        if initialize:
+            ms.trends_updates.truncate()
     
         if diff_startep == 0:
             diff_startep = ms.trends_updates.get_endep()
@@ -40,7 +55,7 @@ def update_stats(config_file: str,
         trends_stats.update_trends_stats(data_source, startep, diff_startep, endep, 
                                          oldstartep, 
                                          item_names=item_names, host_names=host_names, group_names=group_names,
-                                         initialize=initialize)
+                                         initialize=initialize, max_itemIds=max_itemIds)
 
         ms.trends_updates.upsert_updates(startep, endep)
 
@@ -50,7 +65,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
-    parser.add_argument('--start', type=int, help='Start epoch. Data will be initialized if start is given.')
-    parser.add_argument('--end', type=int, help='End epoch.')
+    #parser.add_argument('--end', type=int, help='End epoch.')
+    parser.add_argument('--init', action='store_true', help='If clear DB first')
+    args = parser.parse_args()
 
-    
+    update_stats(args.config, 0, initialize=args.init)

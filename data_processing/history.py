@@ -1,11 +1,13 @@
+from typing import List
+
 import utils.config_loader as config_loader
 import data_getter
 from models.models_set import ModelsSet
 import utils.normalizer as normalizer
 
 
-def _update_history_batch(dg, ms: ModelsSet, itemIds: list[int], 
-            base_clocks: list[int], oldep: int):
+def _update_history_batch(dg, ms: ModelsSet, itemIds: List[int], 
+            base_clocks: List[int], oldep: int):
     # update history data
     hist_df = dg.get_history_data(startep=base_clocks[0], endep=base_clocks[-1], itemIds=itemIds)
     if hist_df.empty:
@@ -27,7 +29,7 @@ def _update_history_batch(dg, ms: ModelsSet, itemIds: list[int],
         ms.history.remove_old_data(oldep)
 
 
-def update_history(data_source, itemIds: list[int], base_clocks: list[int], oldep: int):
+def update_history(data_source, itemIds: List[int], base_clocks: List[int], oldep: int):
     batch_size = config_loader.conf["batch_size"]
     dg = data_getter.get_data_getter(data_source)
     ms = ModelsSet(data_source["name"])

@@ -71,12 +71,16 @@ class PostgreSqlDB:
 			self._create_table_from_template("%s/postgresql/create_table_%s.sql" % (SQL_DIR, 
                                                         tableName), tableName)
 	
-	def table_exists(self, tableName):
+	def table_exists(self, tableName, schema_name=""):
+		schemacond = ""
+		if schema_name != "":
+    			schemacond = f" AND schemaname = '{schema_name}'"
 		sql = """SELECT EXISTS (
     SELECT FROM pg_catalog.pg_tables
-    WHERE tablename  = '%s'
+    WHERE tablename  = '%s' %s
 );
-""" % (tableName.lower())
+""" % (tableName.lower(), schemacond)
+
 		(b,) = self.select1rec(sql)
 		return b
 

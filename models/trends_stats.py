@@ -1,4 +1,5 @@
 import pandas as pd
+from typing import List
 
 from models.model import Model
 
@@ -30,7 +31,7 @@ class TrendsStatsModel(Model):
 
         self.db.exec_sql(sql)
         
-    def read_stats(self, itemids: list[int] = [], startep: int=0, endep: int=0) -> pd.DataFrame:
+    def read_stats(self, itemids: List[int] = [], startep: int=0, endep: int=0) -> pd.DataFrame:
         sql = f"SELECT * FROM {self.table_name}"
         where = []
         if len(itemids) > 0:
@@ -44,7 +45,7 @@ class TrendsStatsModel(Model):
 
         df = self.db.read_sql(sql)
         if len(df) == 0:
-            return pd.DataFrame(columns=self.fields)
+            return pd.DataFrame(columns=self.fields, dtype=object)
         df.columns = self.fields
         return df
 

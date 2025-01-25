@@ -7,16 +7,33 @@ from views.view import View
 
 class ZabbixDashboard(View):
     def __init__(self, config):
+        self.dashboard_name = config["dashboard_name"]
         zapi = ZabbixAPI(config["api_url"])
         zapi.login(config["user"], config["password"])
         self.zapi = zapi
 
 
     # show dashboard
-    def show(self, name, data):
-        self.create_dashboard(name, data)
-            
+    def show(self, data):
+        itemIds_to_show = []
+        for clusterId in data["clusters"].keys():
+            for itemIds in data["clusters"][clusterId].values():
+                itemIds_to_show.append(itemIds[0])
 
+        pagedata = {}
+        for g, itemIds in data["groups"].items():
+            target_itemIds = []
+            for itemId in itemIds:
+                if itemId in itemIds_to_show:
+                    target_itemIds.append(itemId)
+            pagedata[g] = target_itemIds
+        self.create_dashboard(self.dashboard_name, pagedata)
+            
+    def check_conn(self):
+        version = self.zapi.api_version()
+        if version == None:
+            return False
+        return True
     
     # get dashboard
     def get_dashboard(self, dashboard_name):
@@ -38,6 +55,8 @@ class ZabbixDashboard(View):
     # create dashboard
     # pagedata = [(page_name, [itemid1, itemid2, ...]), ...]
     def create_dashboard(self, dashboard_name, pagedata, ncols=4, nrows=12, vsize=5, hsize=15):
+        if pagedata == None or len(pagedata) == 0:
+            return
         pages = []
         for (name, itemids) in pagedata.items():
             if len(itemids) > 0:

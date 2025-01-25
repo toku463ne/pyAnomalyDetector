@@ -10,3 +10,6 @@ class View(ABC):
     @abstractmethod
     def show(self, config: Dict) -> None:
         pass
+
+    def check_conn(self) -> bool:
+        pass

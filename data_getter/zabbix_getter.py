@@ -16,6 +16,13 @@ class ZabbixGetter(DataGetter):
     def init_data_source(self, data_source: Dict):
         self.db = PostgreSqlDB(data_source)
 
+    def check_conn(self) -> bool:
+        cur = self.db.exec_sql("SELECT version();")
+        cnt = 0
+        for row in cur:
+            cnt += 1
+        
+        return cnt > 0
 
     def get_history_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
         if len(itemIds) > 0:
@@ -64,37 +71,46 @@ class ZabbixGetter(DataGetter):
 
         df = self.db.read_sql(sql)
         if len(df) == 0:
-            return pd.DataFrame(columns=self.fields)
+            return pd.DataFrame(columns=self.fields, dtype=object)
         df.columns = self.fields
         return df
     
 
-    def get_itemIds(self, item_names: list[str] = [], 
-                    host_names: list[str] = [], 
-                    group_names: list[str] = []) -> List[int]:
+    def get_itemIds(self, item_names: List[str] = [], 
+                    host_names: List[str] = [], 
+                    group_names: List[str] = [],
+                    max_itemIds = 0) -> List[int]:
         where_conds = []
         # if names includes '*', convert them to '%' and use LIKE operator
         # else use '=' operator
-        names_list = [item_names, host_names, group_names]
-        for names in names_list:
+        names_list = [("items", item_names), ("hosts", host_names), ("hstgrp", group_names)]
+        for (table_name, names) in names_list:
             if len(names) > 0:
                 name_conds = []
                 for name in names:
                     if '*' in name or '%' in name:
-                        name_conds.append(f"name LIKE '{name.replace('*', '%')}'")
+                        name_conds.append(f"{table_name}.name LIKE '{name.replace('*', '%')}'")
                     else:
-                        name_conds.append(f"name = '{name}'")
+                        name_conds.append(f"{table_name}.name = '{name}'")
                 where_conds.append("(" + " OR ".join(name_conds) + ")")
 
         if where_conds:
             where_itemIds = "WHERE " + " AND ".join(where_conds)
         else:
             where_itemIds = ""
+
+        limitcond = ""
+        if max_itemIds > 0:
+            limitcond = f" limit {max_itemIds}"
         
         sql = f"""
-            SELECT itemid
-            FROM items
+            SELECT items.itemid
+            FROM hosts 
+            inner join items on hosts.hostid = items.hostid
+            inner join hosts_groups on hosts_groups.hostid = hosts.hostid
+            inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
             {where_itemIds}
+            {limitcond}
         """
 
         cur = self.db.exec_sql(sql)
@@ -104,6 +120,17 @@ class ZabbixGetter(DataGetter):
             return []
         return [row[0] for row in rows]
     
+    #def get_item_names(self, itemIds: List[int]) -> Dict[int, str]:
+    #    sql = "select itemId, name from items where itemId in (%s)" % ",".join(itemIds)
+    #    cur = self.db.exec_sql(sql)
+    #    rows = cur.fetchall()
+    #    cur.close()
+    #    if len(rows) == 0:
+    #        return {}
+    #    namedict = {row[0]: row[1] for row in rows}
+    #    return namedict
+
+
 
     def get_item_host_dict(self, itemIds: List[int] = []) -> Dict[int, int]:
         if len(itemIds) > 0:
@@ -124,15 +151,19 @@ class ZabbixGetter(DataGetter):
             return {}
         return {row[0]: row[1] for row in rows}
     
+    def get_host_group_dict(self, hostIds: List[int], group_names: List[str]):
+        if len(group_names) > 0:
+            where_conds
+
 
     def classify_by_groups(self, itemIds: List[int], group_names: List[str]) -> Dict[str, List[int]]:
         if len(group_names) == 0:
             return {"all": itemIds}
         
-        if len(itemIds) > 0:
-            cond_itemIds = "AND itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
-        else:
-            cond_itemIds = ""
+        if len(itemIds) == 0:
+            return {"all": []}
+        
+        cond_itemIds = "AND itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
 
         
         # get groupid from given group_names considering sub groups.
@@ -140,11 +171,12 @@ class ZabbixGetter(DataGetter):
         groups = {}
         for group_name in group_names:
             sql = f"""
-                SELECT i.itemid
-                FROM items i
-                JOIN hosts h ON i.hostid = h.hostid
-                JOIN hosts_groups hg ON h.hostid = hg.hostid
-                WHERE g.name = '{group_name}' OR g.name LIKE '{group_name}/%'
+                SELECT items.itemid
+                FROM items 
+                inner join hosts on hosts.hostid = items.hostid
+                inner join hosts_groups on hosts_groups.hostid = hosts.hostid
+                inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
+                WHERE (hstgrp.name = '{group_name}' OR hstgrp.name LIKE '{group_name}/%') 
                 {cond_itemIds}
             """
 

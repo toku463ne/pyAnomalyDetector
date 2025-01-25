@@ -6,6 +6,9 @@ import logging
 SECRET_PATH = 'SECRET_PATH'
 LOG_DIR = 'LOG_DIR'
 DEFAULT_BATCH_SIZE = 1000
+DEFAULT_IGNORE_DIFF_RATE = 0.2
+DEFAULT_ANOMALY_CACHE_PERIOD = 259200 # 3 days
+DEFAULT_TRENDS_MIN_CNT = 14
 
 BASE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 SQL_DIR = os.path.join(BASE_DIR, "db/sql")
@@ -54,6 +57,9 @@ def load_config(config_path=None, additional_context={}):
     conf = yaml.safe_load(Template(yaml.dump(conf)).render(context))
 
     conf['batch_size'] = conf.get('batch_size', DEFAULT_BATCH_SIZE)
+    conf['ignore_diff_rate'] = conf.get('ignore_diff_rate', DEFAULT_IGNORE_DIFF_RATE)
+    conf['anomaly_cache_period'] = conf.get('anomaly_cache_period', DEFAULT_ANOMALY_CACHE_PERIOD)
+    conf['trends_min_count'] = conf.get('trends_min_count', DEFAULT_TRENDS_MIN_CNT)
 
     l = conf.get("logging", None)
     if l:

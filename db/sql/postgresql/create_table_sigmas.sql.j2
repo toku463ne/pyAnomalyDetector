@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS {{ TABLENAME }} (
+    itemid INTEGER,
+    clock INTEGER,
+    mean_up FLOAT,
+    mean2 FLOAT,
+    s1 FLOAT,
+    s2 FLOAT,
+    s3 FLOAT,
+    PRIMARY KEY (itemid, clock)
+);

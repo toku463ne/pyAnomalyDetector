@@ -19,8 +19,10 @@ class TestZabbixDashboard(unittest.TestCase):
         }
 
         data = {
-            'group1': [10061, 10062, 10062],
-            'group2': [22183, 22185, 22187]
+            'groups': {
+                'group1': [10061, 10062, 10062],
+                'group2': [22183, 22185, 22187]
+            }
         }
         
         v = views.get_view(view_source)

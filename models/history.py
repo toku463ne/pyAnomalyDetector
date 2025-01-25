@@ -1,4 +1,6 @@
 import pandas as pd
+from typing import List
+
 from models.model import Model
 
 class HistoryModel(Model):
@@ -6,7 +8,7 @@ class HistoryModel(Model):
     name = "history"
     fields = ['itemid', 'clock', 'value']
 
-    def get_data(self, itemIds: list[int]=[], startep: int = 0, endep: int = 0) -> pd.DataFrame:
+    def get_data(self, itemIds: List[int]=[], startep: int = 0, endep: int = 0) -> pd.DataFrame:
         sql = f"SELECT * FROM {self.table_name}"
         where = []
         if len(itemIds) > 0:
@@ -20,12 +22,12 @@ class HistoryModel(Model):
         
         df = self.db.read_sql(sql)
         if df.empty:
-            return pd.DataFrame(columns=self.fields)
+            return pd.DataFrame(columns=self.fields, dtype=object)
         df.columns = self.fields
         return df
 
 
-    def insert(self, itemids: list[int], clocks: list[int], values: list[float]):
+    def insert(self, itemids: List[int], clocks: List[int], values: List[float]):
         # prepare sql
         sql = f"INSERT INTO {self.table_name} (itemid, clock, value) VALUES "
         for i in range(len(itemids)):
@@ -35,7 +37,7 @@ class HistoryModel(Model):
         self.db.exec_sql(sql)
 
     # buggy
-    def upsert(self, itemids: list[int], clocks: list[int], values: list[float]):
+    def upsert(self, itemids: List[int], clocks: List[int], values: List[float]):
         # prepare sql
         sql = f"INSERT INTO {self.table_name} (itemid, clock, value) VALUES "
         for i in range(len(itemids)):

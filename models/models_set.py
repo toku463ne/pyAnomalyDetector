@@ -6,6 +6,7 @@ from models.history import HistoryModel
 #from models.history_stats import HistoryStatsModel
 from models.trends_updates import TrendsUpdatesModel
 from models.history_updates import HistoryUpdatesModel
+from models.recent_anomalies import RecentAnomalyModel
 from db.postgresql import PostgreSqlDB
 import utils.config_loader as config_loader
 
@@ -20,6 +21,7 @@ class ModelsSet:
         #self.history_stats = HistoryStatsModel(data_source_name)
         self.history_updates = HistoryUpdatesModel(data_source_name)
         self.trends_updates = TrendsUpdatesModel(data_source_name)
+        self.recent_anomalies = RecentAnomalyModel(data_source_name)
 
     # create schema with name of data_source_name 
     def create_schema(self):
@@ -34,3 +36,10 @@ class ModelsSet:
         #self.history_stats.truncate()
         self.history_updates.truncate()
         self.trends_updates.truncate()
+        self.recent_anomalies.truncate()
+
+    def check_conn(self) -> bool:
+        for m in [self.trends_stats, self.history, self.history_updates, self.trends_updates, self.recent_anomalies]:
+            if not m.check_conn():
+                return False
+        return True

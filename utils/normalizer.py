@@ -1,11 +1,12 @@
 
 
 import numpy as np # noqa
+from typing import List
 
 """ get_base_clocks:
 Generates a list of base clocks based on the given start and end epochs and the unit seconds.
 """
-def get_base_clocks(startep: int, endep: int, unitsecs: int) -> list[int]:
+def get_base_clocks(startep: int, endep: int, unitsecs: int) -> List[int]:
     # Adjust startep and endep to be earlier epochs that meet epoch % unitsecs == 0
     adjusted_startep = startep - (startep % unitsecs)
     adjusted_endep = endep - (endep % unitsecs)
@@ -26,7 +27,7 @@ Args:
 Returns:
     list[float]: A list of values adjusted to fit the base clocks.
 """
-def fit_to_base_clocks(base_clocks: list[int], clocks: list[int], values: list[float]) -> list[float]:
+def fit_to_base_clocks(base_clocks: List[int], clocks: List[int], values: List[float]) -> List[float]:
     if len(clocks) == len(base_clocks):
         return values
     else:

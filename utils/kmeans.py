@@ -97,8 +97,8 @@ def assign_clusters(charts: Dict[int, pd.Series], centroids: Dict[int, pd.Series
     chart_data = np.array([charts[chart_id] for chart_id in chart_ids])
     centroid_ids = list(centroids.keys())
     centroid_data = np.array([centroids[centroid_id] for centroid_id in centroid_ids])
-    
     distances = np.linalg.norm(chart_data[:, np.newaxis] - centroid_data, axis=2)
+
     min_distances = np.min(distances, axis=1)
     assigned_clusters = np.argmin(distances, axis=1)
     
@@ -137,9 +137,14 @@ def kmeans(charts: Dict[int, pd.Series],
         clusters = new_clusters
     return clusters, centroids
 
-def run_kmeans(charts: Dict[int, pd.Series], 
-               k: int, threshold: float, 
-               max_iterations: int, n_rounds: int) -> tuple[Dict[int, int], Dict[int, pd.Series]]:
+def run_kmeans(
+    charts: Dict[int, pd.Series],
+    k: int,
+    threshold: float,
+    max_iterations: int,
+    n_rounds: int
+) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
+
     """
     Run customized KMeans clustering.
 

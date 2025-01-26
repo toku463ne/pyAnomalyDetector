@@ -22,6 +22,8 @@ def history2csv(data_source_config: Dict, itemIds: List[int], startep: int, ende
 def ouput_item_relations(data_source_config: Dict, itemIds: List[int], group_names: List[str], outfile: str):
     z = ZabbixGetter(data_source_config)
     df = z.get_item_relations(itemIds, group_names)
+    #print(df)
+
     # Save the DataFrame to a gzipped CSV file
     df.to_csv(outfile, index=False, compression='gzip')
     

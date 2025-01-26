@@ -190,8 +190,7 @@ class ZabbixGetter(DataGetter):
             
 
     def get_item_relations(self, itemIds: List[int], group_names: List[str]) -> pd.DataFrame:
-        columns = ["group_name", "hostid", "itemid"]
-        df = pd.DataFrame(columns=columns)
+        df = pd.DataFrame()
         if len(itemIds) > 0:
             where_itemIds = "AND items.itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
         for name in group_names:
@@ -199,7 +198,7 @@ class ZabbixGetter(DataGetter):
             if '*' in name or '%' in name:
                 where_cond = f"hstgrp.name LIKE '{name.replace('*', '%')}'"
             else:
-                where_cond = f"hstgrp.name = '{name}'"
+                where_cond = f"hstgrp.name = '{name}' or hstgrp.name LIKE '{name}/%'"
             sql = f"""select '{name}' as group_name, hosts.hostid, items.itemid
                 from hosts 
                 inner join items on hosts.hostid = items.hostid
@@ -209,5 +208,6 @@ class ZabbixGetter(DataGetter):
                 {where_itemIds}
             """
             df = pd.concat([df, self.db.read_sql(sql)], ignore_index=True)
-
+        numeric_cols = df.select_dtypes(include=['float']).columns
+        df[numeric_cols] = df[numeric_cols].astype(int)
         return df

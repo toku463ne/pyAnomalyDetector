@@ -13,6 +13,7 @@ def update_stats(config_file: str,
                 item_names: List[str] = None, 
                 host_names: List[str] = None, 
                 group_names: List[str] = None,
+                itemIds: List[int] = None,
                 initialize: bool = False, max_itemIds = 0):
     config_loader.load_config(config_file)
     conf = config_loader.conf
@@ -23,6 +24,8 @@ def update_stats(config_file: str,
         host_names = conf.get('host_names', [])
     if group_names is None:
         group_names = conf.get('group_names', [])
+    if itemIds is None:
+        itemIds = conf.get('itemIds', [])
     data_sources = conf['data_sources']
 
     if endep == 0:
@@ -55,6 +58,7 @@ def update_stats(config_file: str,
         trends_stats.update_trends_stats(data_source, startep, diff_startep, endep, 
                                          oldstartep, 
                                          item_names=item_names, host_names=host_names, group_names=group_names,
+                                         itemIds=itemIds,
                                          initialize=initialize, max_itemIds=max_itemIds)
 
         ms.trends_updates.upsert_updates(startep, endep)

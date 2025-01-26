@@ -2,7 +2,7 @@ import unittest
 
 import __init__
 import stats
-import anomaly_detector
+import detector
 from models.models_set import ModelsSet
 import utils.config_loader as config_loader
 
@@ -15,12 +15,13 @@ class TestDetector(unittest.TestCase):
         ms = ModelsSet(name)
         ms.initialize()
 
-        endep = 1731596400 # Fri Nov 15 00:00:00 JST 2024
+        endep = 1737791212 - 3600
+        itemIds = [23274,33026,242424,242425,255260,61466,61472,61618,247790,57382]
         
         # first data load
-        stats.update_stats(config_file, endep, 0, initialize=True)
+        stats.update_stats(config_file, endep, 0, itemIds=itemIds, initialize=True)
 
-        results = anomaly_detector.run(config_file, endep)
+        results = detector.run(config_file, endep, itemIds=itemIds, initialize=True)
         self.assertTrue(len(results) > 0)
         self.assertTrue(len(results[name]["clusters"]) > 0)
         self.assertTrue(len(results[name]["clusters"][0]["itemIds"]) > 0)

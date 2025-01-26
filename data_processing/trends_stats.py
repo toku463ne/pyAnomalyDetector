@@ -30,13 +30,15 @@ def _update_trends_stats_batch(dg,
 
     if len(stats) > 0:
         # merge new stats to stats
-        stats = pd.merge(stats, new_stats, on='itemid', how='outer', suffixes=('', '_new'))
+        stats = pd.merge(stats, new_stats, on='itemid', how='inner', suffixes=('', '_new'))
 
         # add new stats to stats
         if len(new_stats) > 0:
             stats['sum'] = stats['sum'] + stats['sum_new']
             stats['sqr_sum'] = stats['sqr_sum'] + stats['sqr_sum_new']
             stats['cnt'] = stats['cnt'] + stats['cnt_new']
+
+        stats = stats[['itemid', 'sum', 'sqr_sum', 'cnt']]
     else:
         stats = new_stats
 
@@ -61,6 +63,7 @@ def _update_trends_stats_batch(dg,
                 stats['sum'] = stats['sum'] - stats['sum_old']
                 stats['sqr_sum'] = stats['sqr_sum'] - stats['sqr_sum_old']
                 stats['cnt'] = stats['cnt'] - stats['cnt_old']
+                stats = stats[['itemid', 'sum', 'sqr_sum', 'cnt']]
 
     
     # calculate mean and std
@@ -99,6 +102,7 @@ def update_trends_stats(data_source,
                     item_names: List[str] = None, 
                     host_names: List[str] = None, 
                     group_names: List[str] = None,
+                    itemIds: List[int] = None,
                     initialize=False, max_itemIds=0):
     if item_names is None:
         item_names = []
@@ -106,9 +110,14 @@ def update_trends_stats(data_source,
         host_names = []
     if group_names is None:
         group_names = []
+    if itemIds is None:
+        itemIds = []
     batch_size = config_loader.conf["batch_size"]
     dg = data_getter.get_data_getter(data_source)
-    itemIds = dg.get_itemIds(item_names=item_names, host_names=host_names, group_names=group_names, max_itemIds=max_itemIds)
+    itemIds = dg.get_itemIds(item_names=item_names, 
+                             host_names=host_names, group_names=group_names, 
+                             itemIds=itemIds,
+                             max_itemIds=max_itemIds)
     ms = ModelsSet(data_source["name"])
 
     if initialize:

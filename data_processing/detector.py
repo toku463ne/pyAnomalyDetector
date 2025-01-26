@@ -10,7 +10,8 @@ import utils.normalizer as normalizer
 
 
 def _detect1_batch(ms: ModelsSet, 
-    itemIds: List[int], lambda1_threshold: float, ignore_diff_rate: float, trends_min_count: int
+    itemIds: List[int], lambda1_threshold: float, ignore_diff_rate: float, trends_min_count: int,
+    save_stats: bool = False
 ) -> List[int]:
     
     history_df = ms.history.get_data(itemIds)
@@ -42,30 +43,39 @@ def _detect1_batch(ms: ModelsSet,
 
 
 def _filter_df(stats_df: pd.DataFrame, df: pd.DataFrame, lambda_threshold: float) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    # Filter the dataframe using vectorized operations for better performance
-    df = df.merge(stats_df, on='itemid', how='inner', suffixes=('', '_stats'))
+    df_up = pd.DataFrame(columns=['itemid', 'clock', 'value'])
+    df_dw = pd.DataFrame(columns=['itemid', 'clock', 'value'])
     
-    df_up = df[df['value'] > df['mean'] + lambda_threshold * df['std']]
-    df_dw = df[df['value'] < df['mean'] - lambda_threshold * df['std']]
-    #df_dw['value'] = 2 * df['mean'] - df_dw['value']
-    
-    means_up = df_up.groupby('itemid')['value'].mean().reset_index()
-    stds_up = df_up.groupby('itemid')['value'].std().reset_index()
-    itemIds_up = means_up['itemid'].tolist()
-    df_up = pd.DataFrame({'itemid': itemIds_up, 'mean': means_up['value'], 'std': stds_up['value']})
-    df_up = df_up[df_up['std'] > 0]
+    for row in stats_df.itertuples():
+        itemId = row.Index
+        df_up_part = df[(df['itemid'] == itemId) & (df['value'] > row.mean + lambda_threshold * row.std)]
+        df_dw_part = df[(df['itemid'] == itemId) & (df['value'] < row.mean - lambda_threshold * row.std)]
+        df_up = pd.concat([df_up, df_up_part])
+        df_dw = pd.concat([df_dw, df_dw_part])
 
-    means_dw = df_dw.groupby('itemid')['value'].mean().reset_index()
-    stds_dw = df_dw.groupby('itemid')['value'].std().reset_index()
-    itemIds_dw = means_dw['itemid'].tolist()
-    df_dw = pd.DataFrame({'itemid': itemIds_dw, 'mean': means_dw['value'], 'std': stds_dw['value']})
-    df_dw = df_dw[df_dw['std'] > 0]
+    ## Filter the dataframe using vectorized operations for better performance
+    #df = df.merge(stats_df, on='itemid', how='inner', suffixes=('', '_stats'))
+    
+    #df_up = df[df['value'] > df['mean'] + lambda_threshold * df['std']]
+    #df_dw = df[df['value'] < df['mean'] - lambda_threshold * df['std']]
+    #df_dw['value'] = 2 * df['mean'] - df_dw['value']
+
+    def get_stats(df):
+        means = df.groupby('itemid')['value'].mean().reset_index()
+        stds = df.groupby('itemid')['value'].std().reset_index()
+        itemIds = means['itemid'].tolist()
+        df = pd.DataFrame({'itemid': itemIds, 'mean': means['value'], 'std': stds['value']})
+        df = df[df['std'] > 0]  
+        return df
+    
+    df_up = get_stats(df_up)
+    df_dw = get_stats(df_dw)
 
     return df_up, df_dw
     
 def _filter_df2(stats_df: pd.DataFrame, df: pd.DataFrame, lambda_threshold: float, is_up=True) -> List[int]:
     # Filter the dataframe using vectorized operations for better performance
-    df = df.groupby('itemid')['value'].mean().reset_index()
+    #df = df.groupby('itemid')['value'].mean().reset_index()
     
     df = df.merge(stats_df, on='itemid', how='inner', suffixes=('', '_stats'))
     df = df[df['std'] > 0]
@@ -104,18 +114,21 @@ def _detect2_batch(
     if history_df1.empty:
         return []
     
-    # filter history_df1 where value > mean + lambda2_threshold * std | value < mean - lambda2_threshold * std
-    itemIds = _filter_df2(trends_stats_df_up.set_index('itemid'), history_df1, lambda2_threshold, is_up=True)
-    itemIds.extend(_filter_df2(trends_stats_df_dw.set_index('itemid'), history_df1, lambda2_threshold, is_up=False))
+    # get history starting with startep
+    history_means1 = history_df1.groupby('itemid')['value'].mean().reset_index()
+    itemIds = _filter_df2(trends_stats_df_up.set_index('itemid'), history_means1, lambda2_threshold, is_up=True)
+    itemIds.extend(_filter_df2(trends_stats_df_dw.set_index('itemid'), history_means1, lambda2_threshold, is_up=False))
 
+    
     # get history starting with startep2, and exclude itemIds 
-    history_df2 = history_df1[history_df1['clock'] >= startep2 & ~history_df1['itemid'].isin(itemIds)]
+    history_df2 = history_df1[~history_df1['itemid'].isin(itemIds)]
+    history_df2 = history_df2[history_df1['clock'] >= startep2]
     if history_df2.empty:
         return itemIds
     
-    # filter history_df2 where value > mean + lambda3_threshold * std | value < mean - lambda3_threshold * std
-    itemIds.extend(_filter_df2(trends_stats_df_up.set_index('itemid'), history_df2, lambda3_threshold, is_up=True))
-    itemIds.extend(_filter_df2(trends_stats_df_dw.set_index('itemid'), history_df2, lambda3_threshold, is_up=False))
+    history_means2 = history_df2.groupby('itemid')['value'].mean().reset_index()
+    itemIds.extend(_filter_df2(trends_stats_df_up.set_index('itemid'), history_means2, lambda3_threshold, is_up=True))
+    itemIds.extend(_filter_df2(trends_stats_df_dw.set_index('itemid'), history_means2, lambda3_threshold, is_up=False))
     
     return list(set(itemIds))
 

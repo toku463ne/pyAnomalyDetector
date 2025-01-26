@@ -151,10 +151,6 @@ class ZabbixGetter(DataGetter):
             return {}
         return {row[0]: row[1] for row in rows}
     
-    def get_host_group_dict(self, hostIds: List[int], group_names: List[str]):
-        if len(group_names) > 0:
-            where_conds
-
 
     def classify_by_groups(self, itemIds: List[int], group_names: List[str]) -> Dict[str, List[int]]:
         if len(group_names) == 0:
@@ -180,8 +176,6 @@ class ZabbixGetter(DataGetter):
                 {cond_itemIds}
             """
 
-            #print(sql)
-
             cur = self.db.exec_sql(sql)
             rows = cur.fetchall()
             cur.close()
@@ -194,3 +188,26 @@ class ZabbixGetter(DataGetter):
 
         return groups
             
+
+    def get_item_relations(self, itemIds: List[int], group_names: List[str]) -> pd.DataFrame:
+        columns = ["group_name", "hostid", "itemid"]
+        df = pd.DataFrame(columns=columns)
+        if len(itemIds) > 0:
+            where_itemIds = "AND items.itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
+        for name in group_names:
+            where_cond = ""
+            if '*' in name or '%' in name:
+                where_cond = f"hstgrp.name LIKE '{name.replace('*', '%')}'"
+            else:
+                where_cond = f"hstgrp.name = '{name}'"
+            sql = f"""select '{name}' as group_name, hosts.hostid, items.itemid
+                from hosts 
+                inner join items on hosts.hostid = items.hostid
+                inner join hosts_groups on hosts_groups.hostid = hosts.hostid
+                inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
+                where {where_cond}
+                {where_itemIds}
+            """
+            df = pd.concat([df, self.db.read_sql(sql)], ignore_index=True)
+
+        return df

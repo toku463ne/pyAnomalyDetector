@@ -1,14 +1,12 @@
 ---
-batch_size: 10
+batch_size: 5
 data_sources:
   - name: "test_detector"
-    type: "sample"
-    seed: 10
-    samples: 100
-    sample_config: "sample1.yml"
-
+    type: "csv"
+    data_dir: "tests/testdata/csv"
+    
 history_interval: 600
-history_retention: 18
+history_retention: 12
 history_recent_retention: 6
 kmeans:
   k: 10

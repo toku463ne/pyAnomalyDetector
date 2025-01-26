@@ -1,8 +1,10 @@
 ---
-batch_size: 10
+batch_size: 5
 data_sources:
   - name: "test_stats"
-    type: "sample"
-    seed: 10
-    samples: 100
-    sample_config: "sample1.yml"
+    type: "csv"
+    data_dir: "tests/testdata/csv"
+
+trends_interval: 86400
+trends_retention: 7
+trends_min_count: 7

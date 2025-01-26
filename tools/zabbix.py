@@ -1,5 +1,5 @@
 from typing import List, Dict
-import json
+import csv
 
 import __init__
 import utils.config_loader as config_loader
@@ -18,11 +18,13 @@ def history2csv(data_source_config: Dict, itemIds: List[int], startep: int, ende
     # Save the DataFrame to a gzipped CSV file
     df.to_csv(outfile, index=False, compression='gzip')
 
-def ouput_host_groups(data_source_config: Dict, itemIds: List[int], group_names: List[str], outfile: str):
+
+def ouput_item_relations(data_source_config: Dict, itemIds: List[int], group_names: List[str], outfile: str):
     z = ZabbixGetter(data_source_config)
-    g = z.classify_by_groups(itemIds, group_names)
-    with open(outfile, "w") as f:
-        json.dump(g, f, indent=4)
+    df = z.get_item_relations(itemIds, group_names)
+    # Save the DataFrame to a gzipped CSV file
+    df.to_csv(outfile, index=False, compression='gzip')
+    
 
 
 if __name__ == '__main__':
@@ -59,7 +61,7 @@ if __name__ == '__main__':
     
     trends_file = os.path.join(args.outdir, "trends.csv.gz")
     history_file = os.path.join(args.outdir, "history.csv.gz")
-    groups_file = os.path.join(args.outdir, "groups.json")
+    groups_file = os.path.join(args.outdir, "groups.csv.gz")
     
     data_source_config = {}
     for data_source_config in conf["data_sources"]:
@@ -72,5 +74,5 @@ if __name__ == '__main__':
 
     trends2csv(data_source_config, itemIds, trend_startep, endep, trends_file)
     history2csv(data_source_config, itemIds, history_startep, endep, history_file)
-    ouput_host_groups(data_source_config, itemIds, group_names, groups_file)
+    ouput_item_relations(data_source_config, itemIds, group_names, groups_file)
 

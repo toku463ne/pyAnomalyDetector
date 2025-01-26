@@ -15,13 +15,15 @@ class UpdatesModel(Model):
         
     
     def get_endep(self):
-        val = self.db.select1value(self.table_name, "endep")
+        val = self.db.select1value(self.table_name, "endep", 
+                                   [f'endep = (select max(endep) from {self.table_name})'])
         if val is None:
             return 0
         return val
     
     def get_startep(self):
-        val = self.db.select1value(self.table_name, "startep")
+        val = self.db.select1value(self.table_name, "startep", 
+                                   [f'endep = (select max(endep) from {self.table_name})'])
         if val is None:
             return 0
         return val

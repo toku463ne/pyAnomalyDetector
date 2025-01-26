@@ -14,6 +14,7 @@ def run(config_file: str, endep: int = 0,
         item_names: List[str] = None, 
         host_names: List[str] = None, 
         group_names: List[str] = None,
+        itemIds: List[int] = None,
         max_itemIds = 0,
         initialize = False,
         skip_history_update = False,
@@ -27,6 +28,8 @@ def run(config_file: str, endep: int = 0,
         host_names = conf.get('host_names', [])
     if group_names is None:
         group_names = conf.get('group_names', [])
+    if itemIds is None:
+        itemIds = conf.get('itemIds', [])
 
     data_sources = conf['data_sources']
 
@@ -62,7 +65,11 @@ def run(config_file: str, endep: int = 0,
             ms.history.truncate()
             ms.recent_anomalies.truncate()
 
-        itemIds = dg.get_itemIds(item_names=item_names, host_names=host_names, group_names=group_names,max_itemIds=max_itemIds)
+        itemIds = dg.get_itemIds(item_names=item_names, 
+                                 host_names=host_names, 
+                                 group_names=group_names,
+                                 itemIds=itemIds,
+                                 max_itemIds=max_itemIds)
         # only itemIds existing in trends_stats table
         itemIds, _ = ms.trends_stats.separate_existing_itemIds(itemIds)
         diff_startep = 0
@@ -80,14 +87,12 @@ def run(config_file: str, endep: int = 0,
         existing, nonexisting = ms.history.separate_existing_itemIds(itemIds)
 
         if skip_history_update == False:
-            # get base clocks
-            base_clocks_diff = normalizer.get_base_clocks(diff_startep, endep, history_interval)
-            base_clocks_full = normalizer.get_base_clocks(h_startep1, endep, history_interval)
-            
             # update history
             if len(existing) > 0:
+                base_clocks_diff = normalizer.get_base_clocks(diff_startep, endep, history_interval)
                 history.update_history(data_source, existing, base_clocks_diff, h_startep1)
             if len(nonexisting) > 0:
+                base_clocks_full = normalizer.get_base_clocks(h_startep1, endep, history_interval)
                 history.update_history(data_source, nonexisting, base_clocks_full, h_startep1)
 
         # detect anomaly

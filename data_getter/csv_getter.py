@@ -1,7 +1,7 @@
 """
 class to get data from CSV files
 """
-import os, json, csv
+import os, json, csv, gzip
 
 from data_getter.data_getter import DataGetter
 from typing import Dict, List
@@ -67,10 +67,10 @@ class CsvGetter(DataGetter):
 
     def classify_by_groups(self, itemIds: List[int], group_names: List[str]) -> Dict[str, List[int]]:
         items = {}
-        with open(os.path.join(self.data_dir, self.items_filename), 'r') as f:
+        with gzip.open(os.path.join(self.data_dir, self.items_filename), 'rt') as f:
             csvreader = csv.DictReader(f)
             for row in csvreader:
-                if row['itemid'] not in itemIds:
+                if int(row['itemid']) not in itemIds:
                     continue
                 items[row['itemid']] = {
                     'group_name': row['group_name'],
@@ -86,10 +86,11 @@ class CsvGetter(DataGetter):
     
     def get_item_host_dict(self, itemIds: List[int]) -> Dict[int, str]:
         items = {}
-        with open(os.path.join(self.data_dir, self.items_filename), 'r') as f:
+        # open items.csv.gz
+        with gzip.open(os.path.join(self.data_dir, self.items_filename), 'rt') as f:
             csvreader = csv.DictReader(f)
             for row in csvreader:
-                if row['itemid'] not in itemIds:
+                if int(row['itemid']) not in itemIds:
                     continue
-                items[row['itemid']] = row['hostid']
+                items[int(row['itemid'])] = row['hostid']
         return items

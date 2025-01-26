@@ -231,6 +231,9 @@ def detect(data_source,
         if clusterId not in clusters_info:
             clusters_info[clusterId] = {}
         for itemId in itemIds:
+            if itemId not in host_itemIds:
+                print(f"itemId {itemId} not in host_itemIds")
+                continue
             hostId = host_itemIds[itemId]
             if hostId not in clusters_info[clusterId].keys():
                 clusters_info[clusterId][hostId] = []

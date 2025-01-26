@@ -210,4 +210,5 @@ class ZabbixGetter(DataGetter):
             df = pd.concat([df, self.db.read_sql(sql)], ignore_index=True)
         numeric_cols = df.select_dtypes(include=['float']).columns
         df[numeric_cols] = df[numeric_cols].astype(int)
+        df.columns = ['group_name', 'hostid', 'itemid']
         return df

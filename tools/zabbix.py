@@ -63,7 +63,7 @@ if __name__ == '__main__':
     
     trends_file = os.path.join(args.outdir, "trends.csv.gz")
     history_file = os.path.join(args.outdir, "history.csv.gz")
-    groups_file = os.path.join(args.outdir, "groups.csv.gz")
+    items_file = os.path.join(args.outdir, "items.csv.gz")
     
     data_source_config = {}
     for data_source_config in conf["data_sources"]:
@@ -76,5 +76,5 @@ if __name__ == '__main__':
 
     trends2csv(data_source_config, itemIds, trend_startep, endep, trends_file)
     history2csv(data_source_config, itemIds, history_startep, endep, history_file)
-    ouput_item_relations(data_source_config, itemIds, group_names, groups_file)
+    ouput_item_relations(data_source_config, itemIds, group_names, items_file)
 

@@ -180,6 +180,8 @@ class ZabbixGetter(DataGetter):
                 {cond_itemIds}
             """
 
+            #print(sql)
+
             cur = self.db.exec_sql(sql)
             rows = cur.fetchall()
             cur.close()

@@ -65,6 +65,10 @@ def update_stats(config_file: str,
 
 
 if __name__ == "__main__":
+    #import os
+    #os.environ["SECRET_PATH"] = "/home/minelocal/.creds/zabbix_api.yaml"
+    #update_stats("tests/test_zabbix.d/config.yml", 0, initialize=True)
+
     # read arguments
     import argparse
     parser = argparse.ArgumentParser(description='Process some integers.')

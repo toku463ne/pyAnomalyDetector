@@ -21,7 +21,7 @@ class TestZabbix(unittest.TestCase):
 
         self.assertTrue(check_conn.run_check(config))
 
-        #stats.update_stats(config, endep=0, group_names=group_names, host_names=host_names, initialize=True, max_itemIds=max_itemIds)
+        stats.update_stats(config, endep=0, group_names=group_names, host_names=host_names, initialize=True, max_itemIds=max_itemIds)
 
         data = detector.run(config, endep=1737791212, group_names=group_names, max_itemIds=max_itemIds, skip_history_update=True)
 

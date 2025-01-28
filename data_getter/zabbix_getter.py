@@ -79,6 +79,7 @@ class ZabbixGetter(DataGetter):
     def get_itemIds(self, item_names: List[str] = [], 
                     host_names: List[str] = [], 
                     group_names: List[str] = [],
+                    itemIds: List[int] = [],
                     max_itemIds = 0) -> List[int]:
         where_conds = []
         # if names includes '*', convert them to '%' and use LIKE operator
@@ -91,7 +92,7 @@ class ZabbixGetter(DataGetter):
                     if '*' in name or '%' in name:
                         name_conds.append(f"{table_name}.name LIKE '{name.replace('*', '%')}'")
                     else:
-                        name_conds.append(f"{table_name}.name = '{name}'")
+                        name_conds.append(f"{table_name}.name = '{name}' OR {table_name}.name LIKE '{name}/%'")
                 where_conds.append("(" + " OR ".join(name_conds) + ")")
 
         if where_conds:

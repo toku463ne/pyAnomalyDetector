@@ -1,6 +1,3 @@
-host_groups:
-  - app/cal/sug5k
-
 admdb:
   host: 192.168.4.91
   user: anomdec
@@ -24,3 +21,13 @@ view_sources:
     api_url: "http://192.168.32.10/zabbix"
     user: "{{ API_USER }}"
     password: "{{ API_PASSWORD }}"
+
+group_names:
+  - hw/nw
+  - hw/pc
+  - app/cal
+  - app/bcs
+  - app/imt
+  - app/sim
+  - app/iim
+

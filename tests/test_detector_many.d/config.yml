@@ -15,5 +15,5 @@ kmeans:
   threshold: 0.1
 
 lambda1_threshold: 2.0 # lambda for the 1st filtering
-lambda2_threshold: 1.0 # lambda for the 2nd filtering
-lambda3_threshold: 2.0 # lambda for the final detection
+lambda2_threshold: 2.0 # lambda for the 2nd filtering
+lambda3_threshold: 3.0 # lambda for the final detection

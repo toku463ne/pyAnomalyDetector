@@ -48,11 +48,13 @@ def run(config_file: str, endep: int = 0,
     lambda1_threshold = conf.get('lambda1_threshold', 3.0)
     lambda2_threshold = conf.get('lambda2_threshold', 1.0)
     lambda3_threshold = conf.get('lambda3_threshold', 2.0)
+    anomaly_valid_count_rate = conf.get('anomaly_valid_count_rate', 0.8)
     kconf = conf.get("kmeans", {})
     k = kconf.get("k", 10)
     threshold = kconf.get("threshold", 0.1)
     max_iterations = kconf.get("max_iterations", 10)
     n_rounds = kconf.get("n_rounds", 10)
+    
 
     # data processing
     clusters = {}
@@ -101,7 +103,8 @@ def run(config_file: str, endep: int = 0,
            lambda1_threshold, lambda2_threshold, lambda3_threshold,
            trends_min_count,
            itemIds, group_names, 
-           k, threshold, max_iterations, n_rounds)
+           k, threshold, max_iterations, n_rounds,
+           anomaly_valid_count_rate)
         clusters[data_source_name] = clusters_info
 
         # update history updates

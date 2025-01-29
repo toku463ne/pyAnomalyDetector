@@ -10,8 +10,7 @@ import utils.normalizer as normalizer
 
 
 def _detect1_batch(ms: ModelsSet, 
-    itemIds: List[int], lambda1_threshold: float, ignore_diff_rate: float, trends_min_count: int,
-    save_stats: bool = False
+    itemIds: List[int], lambda1_threshold: float, ignore_diff_rate: float, trends_min_count: int
 ) -> List[int]:
     
     history_df = ms.history.get_data(itemIds)
@@ -42,50 +41,55 @@ def _detect1_batch(ms: ModelsSet,
     return itemIds
 
 
-def _filter_df(stats_df: pd.DataFrame, df: pd.DataFrame, lambda_threshold: float) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    df_up = pd.DataFrame(columns=['itemid', 'clock', 'value'])
-    df_dw = pd.DataFrame(columns=['itemid', 'clock', 'value'])
-    
-    for row in stats_df.itertuples():
-        itemId = row.Index
-        df_up_part = df[(df['itemid'] == itemId) & (df['value'] > row.mean + lambda_threshold * row.std)]
-        df_dw_part = df[(df['itemid'] == itemId) & (df['value'] < row.mean - lambda_threshold * row.std)]
-        df_up = pd.concat([df_up, df_up_part])
-        df_dw = pd.concat([df_dw, df_dw_part])
 
-    ## Filter the dataframe using vectorized operations for better performance
-    #df = df.merge(stats_df, on='itemid', how='inner', suffixes=('', '_stats'))
-    
-    #df_up = df[df['value'] > df['mean'] + lambda_threshold * df['std']]
-    #df_dw = df[df['value'] < df['mean'] - lambda_threshold * df['std']]
-    #df_dw['value'] = 2 * df['mean'] - df_dw['value']
-
-    def get_stats(df):
-        means = df.groupby('itemid')['value'].mean().reset_index()
-        stds = df.groupby('itemid')['value'].std().reset_index()
-        itemIds = means['itemid'].tolist()
-        df = pd.DataFrame({'itemid': itemIds, 'mean': means['value'], 'std': stds['value']})
-        df = df[df['std'] > 0]  
-        return df
-    
-    df_up = get_stats(df_up)
-    df_dw = get_stats(df_dw)
-
-    return df_up, df_dw
-    
-def _filter_df2(stats_df: pd.DataFrame, df: pd.DataFrame, lambda_threshold: float, is_up=True) -> List[int]:
-    # Filter the dataframe using vectorized operations for better performance
-    #df = df.groupby('itemid')['value'].mean().reset_index()
-    
-    df = df.merge(stats_df, on='itemid', how='inner', suffixes=('', '_stats'))
-    df = df[df['std'] > 0]
+def _filter_anomalies(stats_df: pd.DataFrame, df: pd.DataFrame, lambda_threshold: float, is_up=True) -> Tuple[pd.DataFrame]:
+    df_new = pd.DataFrame(columns=['itemid', 'clock', 'value'])
     if is_up:
-        df = df[df['value'] > df['mean'] + lambda_threshold * df['std']]
+        for row in stats_df.itertuples():
+            itemId = row.itemid
+            df_part = df[(df['itemid'] == itemId) & (df['value'] > row.mean + lambda_threshold * row.std)]
+            if df_part.empty:
+                continue
+            df_new = pd.concat([df_new, df_part])
     else:
-        df = df[df['value'] < df['mean'] - lambda_threshold * df['std']]
-    
-    return df['itemid'].unique().tolist()
-    
+        for row in stats_df.itertuples():
+            itemId = row.itemid
+            df_part = df[(df['itemid'] == itemId) & (df['value'] < row.mean - lambda_threshold * row.std)]
+            if df_part.empty:
+                continue
+            df_new = pd.concat([df_new, df_part])
+
+    cnts = df_new.groupby('itemid')['value'].count().reset_index()
+    means = df_new.groupby('itemid')['value'].mean().reset_index()
+    stds = df_new.groupby('itemid')['value'].std().reset_index()
+    itemIds = means['itemid'].tolist()
+    df = pd.DataFrame({'itemid': itemIds, 'mean': means['value'], 'std': stds['value'], 'cnt': cnts['value']})
+    df = df[df['std'] > 0]  
+    return df
+
+def _filter_by_anomaly_cnt(stats_df_up: pd.DataFrame, stats_df_dw: pd.DataFrame, 
+    df: pd.DataFrame, 
+    lamdba_threshold: float,
+    anomaly_valid_count_rate: float) -> List[int]:
+    # get history_df1 count
+    df_counts = df.groupby('itemid')['value'].count().reset_index()
+    df_counts.columns = ['itemid', 'h_total_cnt']
+
+    # filter anomalies in history_df1
+    stats_df_up = _filter_anomalies(stats_df_up, df, lamdba_threshold, is_up=True)
+    stats_df_dw = _filter_anomalies(stats_df_dw, df, lamdba_threshold, is_up=False)
+
+    stats_df_up = pd.merge(stats_df_up, df_counts, on='itemid', how='inner')
+    stats_df_dw = pd.merge(stats_df_dw, df_counts, on='itemid', how='inner')
+
+    # filter itemIds where cnt >= anomaly_valid_count_rate * h_total_cnt
+    stats_df_up = stats_df_up[stats_df_up['cnt'] >= anomaly_valid_count_rate * stats_df_up['h_total_cnt']]
+    stats_df_dw = stats_df_dw[stats_df_dw['cnt'] >= anomaly_valid_count_rate * stats_df_dw['h_total_cnt']]
+
+    itemIds = stats_df_up['itemid'].tolist() + stats_df_dw['itemid'].tolist()
+    # make unique
+    itemIds = list(set(itemIds))
+    return itemIds
 
 
 def _detect2_batch(
@@ -94,7 +98,7 @@ def _detect2_batch(
         lambda1_threshold: float,
         lambda2_threshold: float,
         lambda3_threshold: float,
-        save_stats: float = False
+        anomaly_valid_count_rate: float = 0.8,
     ) -> List[int]:
     # get trends data
     trends_df = dg.get_trends_data(startep=t_startep, endep=endep, itemIds=itemIds)
@@ -106,19 +110,17 @@ def _detect2_batch(
     if trends_stats_df.empty:
         return []
     
-    # filter trends_df where value > mean + lambda1_threshold * std | value < mean - lambda1_threshold * std
-    trends_stats_df_up, trends_stats_df_dw = _filter_df(trends_stats_df.set_index('itemid'), trends_df, lambda1_threshold)
+    # filter anomal trends_df
+    trends_stats_df_up = _filter_anomalies(trends_stats_df, trends_df, lambda1_threshold, is_up=True)
+    trends_stats_df_dw = _filter_anomalies(trends_stats_df, trends_df, lambda1_threshold, is_up=False)
 
     # get history data
     history_df1 = ms.history.get_data(itemIds)
     if history_df1.empty:
         return []
-    
-    # get history starting with startep
-    history_means1 = history_df1.groupby('itemid')['value'].mean().reset_index()
-    itemIds = _filter_df2(trends_stats_df_up.set_index('itemid'), history_means1, lambda2_threshold, is_up=True)
-    itemIds.extend(_filter_df2(trends_stats_df_dw.set_index('itemid'), history_means1, lambda2_threshold, is_up=False))
 
+    itemIds = _filter_by_anomaly_cnt(trends_stats_df_up, trends_stats_df_dw, 
+                                     history_df1, lambda2_threshold, anomaly_valid_count_rate)
     
     # get history starting with startep2, and exclude itemIds 
     history_df2 = history_df1[~history_df1['itemid'].isin(itemIds)]
@@ -126,9 +128,8 @@ def _detect2_batch(
     if history_df2.empty:
         return itemIds
     
-    history_means2 = history_df2.groupby('itemid')['value'].mean().reset_index()
-    itemIds.extend(_filter_df2(trends_stats_df_up.set_index('itemid'), history_means2, lambda3_threshold, is_up=True))
-    itemIds.extend(_filter_df2(trends_stats_df_dw.set_index('itemid'), history_means2, lambda3_threshold, is_up=False))
+    itemIds += _filter_by_anomaly_cnt(trends_stats_df_up, trends_stats_df_dw, 
+                                      history_df2, lambda3_threshold, anomaly_valid_count_rate)
     
     return list(set(itemIds))
 
@@ -179,7 +180,7 @@ def detect(data_source,
            itemIds: List[int] = [],
            group_names: List[str] = [],  
            k=10, threshold=0.1, max_iterations=100, n_rounds=10,
-           save_stats: bool = False) -> Dict:
+           anomaly_valid_count_rate=0.8) -> Dict:
     batch_size = config_loader.conf["batch_size"]
     ignore_diff_rate = config_loader.conf["ignore_diff_rate"]
     dg = data_getter.get_data_getter(data_source)
@@ -189,7 +190,8 @@ def detect(data_source,
     for i in range(0, len(itemIds), batch_size):
         batch_itemIds = itemIds[i:i+batch_size]
         # first detection
-        batch_anomaly_itemIds = _detect1_batch(ms, batch_itemIds, lambda1_threshold, ignore_diff_rate, trends_min_count)
+        batch_anomaly_itemIds = _detect1_batch(ms, batch_itemIds, lambda1_threshold, 
+                                               ignore_diff_rate, trends_min_count)
         if len(batch_anomaly_itemIds) == 0:
             continue
         anomaly_itemIds.extend(batch_anomaly_itemIds)
@@ -203,7 +205,8 @@ def detect(data_source,
         if history_df.empty:
             continue
         batch_anomaly_itemIds = _detect2_batch(dg, ms, batch_itemIds, t_startep, startep2, endep, 
-                                               lambda1_threshold, lambda2_threshold, lambda3_threshold, save_stats=save_stats)
+                                               lambda1_threshold, lambda2_threshold, lambda3_threshold,
+                                               anomaly_valid_count_rate)
         if len(batch_anomaly_itemIds) == 0:
             continue
         anomaly_itemIds2.extend(batch_anomaly_itemIds)

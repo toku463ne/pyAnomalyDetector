@@ -29,6 +29,10 @@ class DataGetter:
     def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
         pass
 
+    @abstractmethod
+    def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+        pass
+
     # function to get itemIds from the data source. 
     @abstractmethod
     def get_itemIds(self, item_names: List[str] = [], 

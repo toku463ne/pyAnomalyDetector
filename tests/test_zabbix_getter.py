@@ -24,6 +24,7 @@ class TestZabbixGetter(unittest.TestCase):
 
         # get current epoch as endep
         endep = int(time.time())
+        endep = 1736845200
 
         # get epoch 1 day ago as startep
         startep = endep - 86400
@@ -56,6 +57,10 @@ class TestZabbixGetter(unittest.TestCase):
         self.assertGreater(len(data), 0)
 
         data = zabbix_getter.get_trends_data(startep, endep, itemIds)
+        self.assertIsNotNone(data)
+        self.assertGreater(len(data), 0)
+
+        data = zabbix_getter.get_trends_full_data(startep, endep, itemIds)
         self.assertIsNotNone(data)
         self.assertGreater(len(data), 0)
 

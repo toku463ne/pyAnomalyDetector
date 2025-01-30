@@ -11,6 +11,7 @@ class ZabbixGetter(DataGetter):
     history_tables = ['history', 'history_uint']
     trends_tables = ['trends', 'trends_uint']
     fields = ['itemid', 'clock', 'value']
+    fields_full = ['itemid', 'clock', 'value_min', 'value_avg', 'value_max']
     db: PostgreSqlDB = None
 
     def init_data_source(self, data_source: Dict):
@@ -75,6 +76,31 @@ class ZabbixGetter(DataGetter):
         df.columns = self.fields
         return df
     
+    def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+        if len(itemIds) > 0:
+            where_itemIds = " AND itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
+        else:
+            where_itemIds = ""
+        
+        # join trends and trends_uint tables
+        sql = f"""
+            SELECT itemid, clock, value_min, value_avg, value_max
+            FROM trends
+            WHERE clock >= {startep} AND clock <= {endep}
+            {where_itemIds}
+            UNION
+            SELECT itemid, clock, value_min, value_avg, value_max
+            FROM trends_uint
+            WHERE clock >= {startep} AND clock <= {endep}
+            {where_itemIds}
+        """
+
+        df = self.db.read_sql(sql)
+        if len(df) == 0:
+            return pd.DataFrame(columns=['itemid', 'clock', 'value_min', 'value_avg', 'value_max'], dtype=object)
+        df.columns = self.fields_full
+        return df
+
 
     def get_itemIds(self, item_names: List[str] = [], 
                     host_names: List[str] = [], 
@@ -121,16 +147,6 @@ class ZabbixGetter(DataGetter):
             return []
         return [row[0] for row in rows]
     
-    #def get_item_names(self, itemIds: List[int]) -> Dict[int, str]:
-    #    sql = "select itemId, name from items where itemId in (%s)" % ",".join(itemIds)
-    #    cur = self.db.exec_sql(sql)
-    #    rows = cur.fetchall()
-    #    cur.close()
-    #    if len(rows) == 0:
-    #        return {}
-    #    namedict = {row[0]: row[1] for row in rows}
-    #    return namedict
-
 
 
     def get_item_host_dict(self, itemIds: List[int] = []) -> Dict[int, int]:

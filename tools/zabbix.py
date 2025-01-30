@@ -7,7 +7,7 @@ from data_getter.zabbix_getter import ZabbixGetter
 
 def trends2csv(data_source_config: Dict, itemIds: List[int], startep: int, endep: int, outfile: str):
     z = ZabbixGetter(data_source_config)
-    df = z.get_trends_data(startep, endep, itemIds=itemIds)
+    df = z.get_trends_full_data(startep, endep, itemIds=itemIds)
     # Save the DataFrame to a gzipped CSV file
     df.to_csv(outfile, index=False, compression='gzip')
 

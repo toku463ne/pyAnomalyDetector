@@ -9,6 +9,7 @@ import pandas as pd # type: ignore
 
 class CsvGetter(DataGetter):
     fields = ['itemid', 'clock', 'value']
+    fields_full = ['itemid', 'clock', 'value_min', 'value_avg', 'value_max']
     trends_filename = 'trends.csv.gz'
     history_filename = 'history.csv.gz'
     items_filename = 'items.csv.gz' # group_name, hostid, itemid
@@ -36,6 +37,13 @@ class CsvGetter(DataGetter):
         return df
     
     def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+        df = self.get_trends_full_data(startep, endep, itemIds)
+        # convert value_avg to value
+        df['value'] = df['value_avg']
+        return df[self.fields]
+    
+    
+    def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
         df = pd.read_csv(os.path.join(self.data_dir, self.trends_filename))
         if len(df) == 0:
             return pd.DataFrame(columns=self.fields)

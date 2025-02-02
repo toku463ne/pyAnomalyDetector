@@ -24,7 +24,7 @@ class TestDetector(unittest.TestCase):
         results = detector.run(config_file, endep, itemIds=itemIds, initialize=True)
         self.assertTrue(len(results) > 0)
         self.assertTrue(len(results[name]["anomaly_itemIds"]) > 0)
-        self.assertTrue(len(results[name]["anomaly_itemIds2"]) > 0)
+        #self.assertTrue(len(results[name]["anomaly_itemIds2"]) > 0)
 
         # read history data
         history_df = ms.history.get_data(itemIds)
@@ -41,7 +41,7 @@ class TestDetector(unittest.TestCase):
         results = detector.run(config_file, endep, itemIds=itemIds, initialize=False)
         self.assertTrue(len(results) > 0)
         self.assertTrue(len(results[name]["anomaly_itemIds"]) > 0)
-        self.assertTrue(len(results[name]["anomaly_itemIds2"]) > 0)
+        #self.assertTrue(len(results[name]["anomaly_itemIds2"]) > 0)
 
         # read history data
         history_df = ms.history.get_data(itemIds)

@@ -15,7 +15,7 @@ class TestDetector(unittest.TestCase):
         ms = ModelsSet(name)
         ms.initialize()
 
-        endep = 1737791212 - 3600
+        endep = 1738022400 - 3600
         group_names = ['app/imt', 'app/bcs', 'app/cal', 'app/iim', 'app/sim', 'hw/nw', 'hw/pc']
         
         # first data load

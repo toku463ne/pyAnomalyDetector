@@ -1,5 +1,4 @@
 from typing import List, Dict
-import csv
 
 import __init__
 import utils.config_loader as config_loader
@@ -7,17 +6,23 @@ from data_getter.zabbix_getter import ZabbixGetter
 
 def trends2csv(data_source_config: Dict, itemIds: List[int], startep: int, endep: int, outfile: str):
     z = ZabbixGetter(data_source_config)
-    df = z.get_trends_full_data(startep, endep, itemIds=itemIds)
-    # Save the DataFrame to a gzipped CSV file
-    df.to_csv(outfile, index=False, compression='gzip')
+    # do by batch
+    for i in range(0, len(itemIds), 100):
+        batch_itemIds = itemIds[i:i+100]
+        df = z.get_trends_full_data(startep, endep, itemIds=batch_itemIds)
+        # Save the DataFrame to a gzipped CSV file
+        df.to_csv(outfile, mode='a', index=False, compression='gzip')
 
 
 def history2csv(data_source_config: Dict, itemIds: List[int], startep: int, endep: int, outfile: str):
     z = ZabbixGetter(data_source_config)
-    df = z.get_history_data(startep, endep, itemIds=itemIds)
-    # Save the DataFrame to a gzipped CSV file
-    df.to_csv(outfile, index=False, compression='gzip')
-
+    # do by batch
+    for i in range(0, len(itemIds), 100):
+        batch_itemIds = itemIds[i:i+100]
+        df = z.get_history_data(startep, endep, itemIds=batch_itemIds)
+        # Save the DataFrame to a gzipped CSV file
+        df.to_csv(outfile, mode='a', index=False, compression='gzip')
+    
 
 def ouput_item_relations(data_source_config: Dict, itemIds: List[int], group_names: List[str], outfile: str):
     z = ZabbixGetter(data_source_config)

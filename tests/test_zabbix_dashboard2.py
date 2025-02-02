@@ -12,7 +12,7 @@ class TestZabbixDashboard(unittest.TestCase):
         os.environ["SECRET_PATH"] = "/home/minelocal/.creds/zabbix_api.yaml"
         config = "tests/test_zabbix.d/config.yml"
         data_file = "tests/test_zabbix.d/result.json"
-        data_file = "/tmp/anom.json"
+        data_file = "tests/test_reporter.d/results_1st.json"
         viewer.prepare(config, data_file)
 
         

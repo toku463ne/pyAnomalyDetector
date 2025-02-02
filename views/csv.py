@@ -37,6 +37,13 @@ class CsvViews(View):
             # show datatime in vertical way
             ax.xaxis_date()
             fig.autofmt_xdate()
+            
+            # show value_avg, value_min, value_max, value in the same graph
+            ax.plot(data[data['itemid'] == itemid]['clock'], data[data['itemid'] == itemid]['value_avg'])
+            ax.plot(data[data['itemid'] == itemid]['clock'], data[data['itemid'] == itemid]['value_min'])
+            ax.plot(data[data['itemid'] == itemid]['clock'], data[data['itemid'] == itemid]['value_max'])
+            ax.plot(data[data['itemid'] == itemid]['clock'], data[data['itemid'] == itemid]['value'])
+            
             ax.plot(data[data['itemid'] == itemid]['clock'], data[data['itemid'] == itemid]['value'])
 
         plt.tight_layout()

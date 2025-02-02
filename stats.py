@@ -35,11 +35,12 @@ def update_stats(config_file: str,
     endep -= 1
 
     # update stats
-    for data_source in data_sources:
+    for data_source_name, data_source in data_sources.items():
+        data_source["name"] = data_source_name
         oldstartep: int = 0
         startep: int = 0
         diff_startep: int = 0
-        ms = ModelsSet(data_source["name"])
+        ms = ModelsSet(data_source_name)
 
         if initialize:
             ms.trends_updates.truncate()

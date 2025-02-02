@@ -14,9 +14,10 @@ def prepare(config_file: str, data_file: str) :
     config_loader.load_config(config_file)
     conf = config_loader.conf
 
-    for view_source in conf.get('view_sources', []):
+    for view_source_name, view_source in conf.get('view_sources', []).items():
+        view_source['name'] = view_source_name
         v = views.get_view(view_source)
-        v.show(data[view_source['name']])
+        v.show(data[view_source_name])
 
 
 

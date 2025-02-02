@@ -18,6 +18,9 @@ def _update_history_batch(dg, ms: ModelsSet, itemIds: List[int],
         if item_hist_df.empty:
             continue
 
+        # sort by clock
+        item_hist_df = item_hist_df.sort_values(by='clock')
+
         values = normalizer.fit_to_base_clocks(
             base_clocks, 
             item_hist_df['clock'].tolist(), 

@@ -1,9 +1,9 @@
 ---
 batch_size: 100
 data_sources:
-  - name: "test_detector_many"
+  "test_detector_many":
     type: "csv"
-    data_dir: "tests/testdata/csv"
+    data_dir: "tests/testdata/csv/20250128"
     
 history_interval: 600
 history_retention: 12

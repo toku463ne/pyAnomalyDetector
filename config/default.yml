@@ -14,21 +14,22 @@ admdb:
 #  data_sources: List of data sources
 #  supported types: zabbix_psql, http_csv
 ##################################################
-data_sources:
-  - name: "zabbix"
-    type: "psql"
-    host: 127.0.0.1
-    dbname: zabbix
-    user: anomdec_monitor
-    password: '{{ ZABBIX_DB_PASSWORD }}'
-    port: 5432
+#data_sources:
+#  "zabbix":
+#    name: "zabbix"
+#    type: "psql"
+#    host: 127.0.0.1
+#    dbname: zabbix
+#    user: anomdec_monitor
+#   password: '{{ ZABBIX_DB_PASSWORD }}'
+#   port: 5432
 
 ##################################################
 #  view_sources: List of view sources
 #  supported types: zabbix_dashboard
 ##################################################
 view_sources:
-  - name: "zabbix"
+  "zabbix":
     type: "zabbix_dashboard"
     api_url: "http://localhost/zabbix"
     user: "admin"
@@ -67,7 +68,7 @@ lambda2_threshold: 1.0 # lambda for the 2nd filtering (for history_retention)
 lambda3_threshold: 2.0 # lambda for the 2nd filtering (for history_recent_retention)
 ignore_diff_rate: 0.2 # ignore if the peaks are just less than this rate
 anomaly_cache_period: 259200 # 3 days
-anomaly_valid_count_rate: 0.8 # valid if the count is more than this rate
+batch_size: 100
 
 ##################################################
 #  logging: No logging by default

@@ -48,6 +48,8 @@ class ZabbixGetter(DataGetter):
         if len(df) == 0:
             return pd.DataFrame(columns=self.fields)
         df.columns = self.fields
+        # sort by itemid and clock
+        df = df.sort_values(['itemid', 'clock'])
         return df
     
 
@@ -74,6 +76,8 @@ class ZabbixGetter(DataGetter):
         if len(df) == 0:
             return pd.DataFrame(columns=self.fields, dtype=object)
         df.columns = self.fields
+        # sort by itemid and clock
+        df = df.sort_values(['itemid', 'clock'])
         return df
     
     def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
@@ -99,6 +103,8 @@ class ZabbixGetter(DataGetter):
         if len(df) == 0:
             return pd.DataFrame(columns=['itemid', 'clock', 'value_min', 'value_avg', 'value_max'], dtype=object)
         df.columns = self.fields_full
+        # sort by itemid and clock
+        df = df.sort_values(['itemid', 'clock'])
         return df
 
 
@@ -229,3 +235,33 @@ class ZabbixGetter(DataGetter):
         df[numeric_cols] = df[numeric_cols].astype(int)
         df.columns = ['group_name', 'hostid', 'itemid']
         return df
+
+
+
+    def get_item_details(self, itemIds: List[int]) -> Dict:
+        """
+        get dict in the following format
+        {
+            <itemid>: {
+                'hostid': <hostId>,
+                'host_name': <hostName>,
+                'item_name': <itemName>}
+        }
+        """
+        if len(itemIds) == 0:
+            return {}
+        
+        where_itemIds = "WHERE itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
+        sql = f"""
+            SELECT items.itemid, hosts.hostid, hosts.name as host_name, items.name as item_name
+            FROM items 
+            inner join hosts on hosts.hostid = items.hostid
+            {where_itemIds}
+        """
+
+        cur = self.db.exec_sql(sql)
+        rows = cur.fetchall()
+        cur.close()
+        if len(rows) == 0:
+            return {}
+        return {row[0]: {"hostid": row[1], "host_name": row[2], "item_name": row[3]} for row in rows}

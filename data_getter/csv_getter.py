@@ -34,20 +34,25 @@ class CsvGetter(DataGetter):
         # filter by itemIds
         if len(itemIds) > 0:
             df = df[df['itemid'].isin(itemIds)]
+
+        # sort by itemid, clock
+        df = df.sort_values(['itemid', 'clock'])
         return df
     
     def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
         df = self.get_trends_full_data(startep, endep, itemIds)
         # convert value_avg to value
         df['value'] = df['value_avg']
+        # sort by itemid, clock
+        df = df.sort_values(['itemid', 'clock'])
         return df[self.fields]
     
     
     def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
         df = pd.read_csv(os.path.join(self.data_dir, self.trends_filename))
         if len(df) == 0:
-            return pd.DataFrame(columns=self.fields)
-        df.columns = self.fields
+            return pd.DataFrame(columns=self.fields_full)
+        df.columns = self.fields_full
 
         # filter by time
         df = df[(df['clock'] >= startep) & (df['clock'] <= endep)]
@@ -55,6 +60,9 @@ class CsvGetter(DataGetter):
         # filter by itemIds
         if len(itemIds) > 0:
             df = df[df['itemid'].isin(itemIds)]
+
+        # sort by itemid, clock
+        df = df.sort_values(['itemid', 'clock'])
         return df
     
     def get_itemIds(self, item_names: List[str] = [], 
@@ -92,13 +100,18 @@ class CsvGetter(DataGetter):
         return groups
     
     
-    def get_item_host_dict(self, itemIds: List[int]) -> Dict[int, str]:
+    def get_item_details(self, itemIds: List[int]) -> Dict:
         items = {}
         # open items.csv.gz
         with gzip.open(os.path.join(self.data_dir, self.items_filename), 'rt') as f:
             csvreader = csv.DictReader(f)
             for row in csvreader:
-                if int(row['itemid']) not in itemIds:
+                itemId = int(row['itemid'])
+                if itemId not in itemIds:
                     continue
-                items[int(row['itemid'])] = row['hostid']
+                items[itemId] = {
+                    "hostid": int(row['hostid']),
+                    "host_name": row.get('host_name', ''),
+                    "item_name": row.get('item_name', '')
+                }
         return items

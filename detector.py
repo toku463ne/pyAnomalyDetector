@@ -7,7 +7,6 @@ import data_processing.detector as detector
 import data_processing.history as history
 import data_getter
 import utils.normalizer as normalizer
-import views
 
 
 def run(config_file: str, endep: int = 0, 
@@ -17,7 +16,7 @@ def run(config_file: str, endep: int = 0,
         itemIds: List[int] = None,
         max_itemIds = 0,
         initialize = False,
-        skip_history_update = False,
+        skip_history_update = False
         ) -> Tuple[Dict, Dict, Dict]:
     config_loader.load_config(config_file)
     conf = config_loader.conf
@@ -58,8 +57,8 @@ def run(config_file: str, endep: int = 0,
 
     # data processing
     clusters = {}
-    for data_source in data_sources:
-        data_source_name = data_source["name"]
+    for data_source_name, data_source in data_sources.items():
+        data_source["name"] = data_source_name
         ms = ModelsSet(data_source_name)
         dg = data_getter.get_data_getter(data_source)
 
@@ -136,17 +135,16 @@ if __name__ == "__main__":
     groups = args.groups
     output = args.output
 
-
-    import cProfile
-    import pstats
     clusters = run(config_file, endep, items, hosts, groups, initialize=args.init, skip_history_update=args.skip_history_update)
 
     # pretty print json clusters
     import json
     if output != "":
-        with open(output, 'w') as f:
-            json.dump(clusters, f, indent=4)
+        for data_source_name, df in clusters.items():
+                df.to_csv(f"{output}_{data_source_name}.csv", index=False)
     else:
-        print(json.dumps(clusters, indent=4))
+        for data_source_name, df in clusters.items():
+            print(data_source_name)
+            print(df)
 
     

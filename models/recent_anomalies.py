@@ -1,11 +1,12 @@
 from typing import List
+import pandas as pd
 
 from models.model import Model
 
 class RecentAnomalyModel(Model):
     name = "recent_anomalies"
     sql_template = "recent_anomalies"
-    fields = ["itemid", "name", "last_uplate"]
+    fields = ["itemid", "name", "last_update"]
 
 
     def upsert(self, itemid: int, last_update: int):
@@ -24,11 +25,18 @@ class RecentAnomalyModel(Model):
 
     
     def filter_itemIds(self, itemIds: List[int], oldep: int):
-        sql = f"select itemid from {self.table_name} where last_update >= {oldep} and itemid in (%s);" % ",".join(itemIds)
+        sql = f"select itemid from {self.table_name} where last_update >= {oldep} and itemid in (%s);" % ",".join(map(str, itemIds))
         cur = self.db.exec_sql(sql)
         ex_itemIds = []
         for (itemId,) in cur:
             ex_itemIds.append(itemId)
         
-        itemIds -= ex_itemIds
+        # exclude ex_itemIds from itemIds
+        itemIds = [itemId for itemId in itemIds if itemId not in ex_itemIds]
+
         return itemIds
+
+    def get_all(self) -> pd.DataFrame:
+        sql = f"select * from {self.table_name};"
+        cur = self.db.exec_sql(sql)
+        return pd.DataFrame(cur, columns=self.fields)

@@ -261,7 +261,7 @@ def _detect2_batch(
     
     # get history starting with startep2, and exclude itemIds 
     history_df2 = history_df1[~history_df1['itemid'].isin(itemIds1)]
-    history_df2 = history_df2[history_df1['clock'] >= startep2]
+    history_df2 = history_df2[history_df2['clock'] >= startep2]
     if history_df2.empty:
         return itemIds
     

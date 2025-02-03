@@ -12,7 +12,6 @@ def prepare(config_file: str) :
     conf = config_loader.conf
 
     for view_source in conf.get('view_sources', []).items():
-        view_source_name = view_source['name']
         ms = ModelsSet(view_source["data_source_name"])
         df = ms.anomalies.get_data()
         v = views.get_view(view_source)

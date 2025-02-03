@@ -1,6 +1,7 @@
 """
 Update the zabbix_dashboard view
 """
+import pandas as pd
 from pyzabbix import ZabbixAPI
 
 from views.view import View
@@ -14,19 +15,27 @@ class ZabbixDashboard(View):
 
 
     # show dashboard
-    def show(self, data):
-        itemIds_to_show = []
-        for clusterId in data["clusters"].keys():
-            for itemIds in data["clusters"][clusterId].values():
-                itemIds_to_show.append(itemIds[0])
+    """data
+    group_name	character varying(255) NULL	
+    itemid	integer NULL	
+    hostid	integer NULL	
+    host_name	character varying(255) NULL	
+    item_name	character varying(255) NULL	
+    """
+    def show(self, data: pd.DataFrame):
+        # get min(itemid) for each group_name, hostid
+        data = data.groupby(["group_name", "hostid"]).agg({"itemid": "min"}).reset_index()
+        data.columns = ["group_name", "hostid", "itemid"]
+        data = data[["group_name", "itemid"]]
 
         pagedata = {}
-        for g, itemIds in data["groups"].items():
-            target_itemIds = []
-            for itemId in itemIds:
-                if itemId in itemIds_to_show:
-                    target_itemIds.append(itemId)
-            pagedata[g] = target_itemIds
+        for _, row in data.iterrows():
+            group_name = row["group_name"]
+            itemid = row["itemid"]
+            if group_name not in pagedata:
+                pagedata[group_name] = []
+            pagedata[group_name].append(itemid)
+        
         self.create_dashboard(self.dashboard_name, pagedata)
             
     def check_conn(self):

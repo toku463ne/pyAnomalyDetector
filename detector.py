@@ -57,14 +57,15 @@ def run(config_file: str, endep: int = 0,
 
     # data processing
     clusters = {}
-    for data_source_name, data_source in data_sources.items():
-        data_source["name"] = data_source_name
+    for data_source in data_sources.items():
+        data_source_name = data_source_name["name"]
         ms = ModelsSet(data_source_name)
         dg = data_getter.get_data_getter(data_source)
 
         if initialize:
             ms.history.truncate()
             ms.recent_anomalies.truncate()
+            ms.history_updates.truncate()
 
         itemIds = dg.get_itemIds(item_names=item_names, 
                                  host_names=host_names, 
@@ -79,6 +80,7 @@ def run(config_file: str, endep: int = 0,
         if oldendep > 0:
             if h_startep1 > oldendep:
                 ms.history.truncate()
+                ms.history_updates.truncate()
                 diff_startep = h_startep1
             else:
                 diff_startep = oldendep + 1
@@ -97,14 +99,14 @@ def run(config_file: str, endep: int = 0,
                 history.update_history(data_source, nonexisting, base_clocks_full, h_startep1)
 
         # detect anomaly
-        clusters_info = detector.detect(data_source, 
+        data = detector.detect(data_source, 
            t_startep, h_startep2, endep,
            lambda1_threshold, lambda2_threshold, lambda3_threshold,
            trends_min_count,
            itemIds, group_names, 
            k, threshold, max_iterations, n_rounds,
            anomaly_valid_count_rate)
-        clusters[data_source_name] = clusters_info
+        clusters[data_source_name] = data
 
         # update history updates
         if skip_history_update == False:
@@ -141,6 +143,7 @@ if __name__ == "__main__":
     import json
     if output != "":
         for data_source_name, df in clusters.items():
+            if df:
                 df.to_csv(f"{output}_{data_source_name}.csv", index=False)
     else:
         for data_source_name, df in clusters.items():

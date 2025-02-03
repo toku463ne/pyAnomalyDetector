@@ -1,7 +1,7 @@
 ---
 batch_size: 5
 data_sources:
-  "test_detector":
+  - name: "test_detector"
     type: "csv"
     data_dir: "tests/testdata/csv"
     

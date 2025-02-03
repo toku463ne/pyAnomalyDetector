@@ -1,5 +1,5 @@
 view_sources:
-  "test_zabbix":
+  - name: "test_zabbix"
     type: "csv"
     history_file_path: "tests/testdata/csv/history.csv.gz"
     trends_file_path: "tests/testdata/csv/trends.csv.gz"

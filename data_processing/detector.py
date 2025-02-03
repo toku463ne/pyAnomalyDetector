@@ -139,7 +139,9 @@ def _filter_anomalies(df: pd.DataFrame,
                       stats_df: pd.DataFrame,
                       lambda_threshold: float,
                       is_up=True) -> pd.DataFrame:
-    new_df = pd.DataFrame(columns=['itemid', 'clock', 'value'])
+    dtypes = np.dtype([('itemid', 'int64'), ('clock', 'int64'), ('value', 'float64')])
+    new_df = pd.DataFrame(np.empty(0, dtype=dtypes))
+    #new_df = pd.DataFrame(columns=['itemid', 'clock', 'value'])
     for row in stats_df.itertuples():
         itemId = row.itemid
         std = row.std
@@ -354,24 +356,26 @@ def detect(data_source,
             continue
         anomaly_itemIds2.extend(batch_anomaly_itemIds)
 
+    if len(anomaly_itemIds2) == 0:
+        return None
+
     host_itemIds = dg.get_item_host_dict(anomaly_itemIds2)
 
-    if len(anomaly_itemIds2) < 2:
-        return None
-    
+    cluster_info = {}
+    clusters = {}
+    if len(anomaly_itemIds2) > 2:
+        if len(anomaly_itemIds2) < k:
+            k = 2
 
-    if len(anomaly_itemIds2) < k:
-        k = 2
 
-
-    # classify anomaly_itemIds2 by kmeans
-    clusters = _classify_anomalies(ms, anomaly_itemIds2, 
-                                   k=k, threshold=threshold, max_iterations=max_iterations, n_rounds=n_rounds)
+        # classify anomaly_itemIds2 by kmeans
+        clusters = _classify_anomalies(ms, anomaly_itemIds2, 
+                                    k=k, threshold=threshold, max_iterations=max_iterations, n_rounds=n_rounds)
                 
     groups_info = dg.classify_by_groups(anomaly_itemIds2, group_names)
 
     # results in df with columns: itemId, hostId, host_name, item_name, clusterId, group_name
-    itemIds = []
+    target_itemIds = []
     hostIds = []
     host_names = []
     item_names = []
@@ -380,12 +384,12 @@ def detect(data_source,
     item_details = dg.get_item_details(anomaly_itemIds2)
     for group_name, itemIds in groups_info.items():
         for itemId in itemIds:
-            itemIds.append(itemId)
+            target_itemIds.append(itemId)
             hostIds.append(host_itemIds[itemId])
             host_names.append(item_details[itemId]['host_name'])
             item_names.append(item_details[itemId]['item_name'])
             group_names.append(group_name)
-            clusterIds.append(clusters[itemId])
+            clusterIds.append(clusters.get(itemId, -1))
             
     results = pd.DataFrame({'group_name': group_names, 
                             'clusteriId': clusterIds,

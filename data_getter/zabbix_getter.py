@@ -46,7 +46,7 @@ class ZabbixGetter(DataGetter):
 
         df = self.db.read_sql(sql)
         if len(df) == 0:
-            return pd.DataFrame(columns=self.fields)
+            return pd.DataFrame(columns=self.fields, dtype=object)
         df.columns = self.fields
         # sort by itemid and clock
         df = df.sort_values(['itemid', 'clock'])
@@ -127,6 +127,9 @@ class ZabbixGetter(DataGetter):
                         name_conds.append(f"{table_name}.name = '{name}' OR {table_name}.name LIKE '{name}/%'")
                 where_conds.append("(" + " OR ".join(name_conds) + ")")
 
+        if len(itemIds) > 0:
+            where_conds.append(" itemId IN (%s)" % ",".join(map(str, itemIds)))
+
         if where_conds:
             where_itemIds = "WHERE " + " AND ".join(where_conds)
         else:
@@ -190,7 +193,7 @@ class ZabbixGetter(DataGetter):
         groups = {}
         for group_name in group_names:
             sql = f"""
-                SELECT items.itemid
+                SELECT distinct items.itemid
                 FROM items 
                 inner join hosts on hosts.hostid = items.hostid
                 inner join hosts_groups on hosts_groups.hostid = hosts.hostid

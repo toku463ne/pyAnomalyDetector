@@ -27,10 +27,13 @@ class Model:
     
     def separate_existing_itemIds(self, itemIds: List[int]) -> Tuple[List[int],List[int]]:
         sql = f"SELECT distinct itemid FROM {self.table_name}"
-        where = []
+        where_conds = ""
         if len(itemIds) > 0:
-            where.append(f"itemid IN ({','.join(map(str, itemIds))})")
-        
+            where_conds = f"itemid IN ({','.join(map(str, itemIds))})"
+
+        if where_conds != "":
+            sql += " WHERE " + where_conds
+
         cur = self.db.exec_sql(sql)
         existing = []
         for (itemId,) in cur:

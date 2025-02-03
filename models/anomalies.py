@@ -33,8 +33,8 @@ class AnomaliesModel(Model):
 
         for _, row in data.iterrows():
             sql = f"""INSERT INTO {self.table_name} 
-(group_name, groupid, itemid, hostid, host_name, item_name) 
+(group_name, itemid, hostid, host_name, item_name) 
 VALUES 
-('{row['group_name']}', {row['groupid']}, {row['itemid']}, {row['hostid']}, '{row['host_name']}', '{row['item_name']}');"""
+('{row.group_name}', {row.itemid}, {row.hostid}, '{row.host_name}', '{row.item_name}');"""
             self.db.exec_sql(sql)
 

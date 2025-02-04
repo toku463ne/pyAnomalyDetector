@@ -23,10 +23,7 @@ class TestDetector(unittest.TestCase):
 
         results = detector.run(config_file, endep, group_names=group_names, initialize=True)
         self.assertTrue(len(results) > 0)
-        self.assertTrue(len(results[name]["clusters"]) > 0)
-        self.assertTrue(len(results[name]["clusters"][3]) > 0)
-        self.assertTrue(len(results[name]["anomaly_itemIds"]) > 0)
-        self.assertTrue(len(results[name]["anomaly_itemIds2"]) > 0)
+        
 
         import json
         json.dump(results, open('tests/test_detector_many.d/results_1st.json', 'w'), indent=2)

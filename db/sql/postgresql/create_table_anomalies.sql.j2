@@ -1,7 +1,10 @@
 CREATE TABLE IF NOT EXISTS {{ TABLENAME }} (
-    group_name VARCHAR(255),
     itemid INTEGER,
+    created INTEGER,
     hostid INTEGER,
+    clusterid INTEGER,
+    group_name VARCHAR(255),
     host_name VARCHAR(255),
-    item_name VARCHAR(255)
+    item_name VARCHAR(255),
+    PRIMARY KEY (itemid, created)
 );

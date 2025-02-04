@@ -361,7 +361,6 @@ def detect(data_source,
 
     host_itemIds = dg.get_item_host_dict(anomaly_itemIds2)
 
-    cluster_info = {}
     clusters = {}
     if len(anomaly_itemIds2) > 2:
         if len(anomaly_itemIds2) < k:
@@ -385,18 +384,20 @@ def detect(data_source,
     for group_name, itemIds in groups_info.items():
         for itemId in itemIds:
             target_itemIds.append(itemId)
-            hostIds.append(host_itemIds[itemId])
+            hostIds.append(host_itemIds.get(itemId, -1))
             host_names.append(item_details[itemId]['host_name'])
             item_names.append(item_details[itemId]['item_name'])
             group_names.append(group_name)
             clusterIds.append(clusters.get(itemId, -1))
             
-    results = pd.DataFrame({'group_name': group_names, 
-                            'clusteriId': clusterIds,
-                            'itemid': target_itemIds, 'hostid': hostIds, 
+    results = pd.DataFrame({'itemid': target_itemIds, 
+                            'hostid': hostIds, 
+                            'created': [endep] * len(target_itemIds),
+                            'clusterid': clusterIds,
+                            'group_name': group_names, 
                             'host_name': host_names, 'item_name': item_names})
     
-    ms.anomalies.import_data(results)
+    ms.anomalies.insert_data(results)
     return results
 
     

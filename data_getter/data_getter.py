@@ -43,10 +43,10 @@ class DataGetter:
     # function to get dict of itemId to hostId from the data source.
     @abstractmethod
     def get_item_host_dict(self, itemIds: List[int]=[]) -> Dict[int, int]:
-        pass
+        return {}
 
     
     # funtion to classify items by host groups
     def classify_by_groups(self, itemIds: List[int], group_names: List[str]) -> dict:
-        pass
+        return {}
         

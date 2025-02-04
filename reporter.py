@@ -146,7 +146,8 @@ def report(config_file: str, data_file: str, epoch: int):
                     target_itemIds.append(itemIds[0])
         
         # rule out items in the recent_anomalies table
-        filtered_itemIds = ms.recent_anomalies.filter_itemIds(target_itemIds, anomaly_cache_ep)
+        #filtered_itemIds = ms.recent_anomalies.filter_itemIds(target_itemIds, anomaly_cache_ep)
+        filtered_itemIds = ms.anomalies.filter_itemIds(target_itemIds, anomaly_cache_ep)
 
         """
         create json in the following format having filtered_itemIds

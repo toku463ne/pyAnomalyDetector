@@ -64,7 +64,8 @@ def run(config_file: str, endep: int = 0,
 
         if initialize:
             ms.history.truncate()
-            ms.recent_anomalies.truncate()
+            #ms.recent_anomalies.truncate()
+            ms.anomalies.truncate()
             ms.history_updates.truncate()
 
         itemIds = dg.get_itemIds(item_names=item_names, 

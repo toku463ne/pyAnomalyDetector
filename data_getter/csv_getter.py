@@ -53,6 +53,7 @@ class CsvGetter(DataGetter):
         if len(df) == 0:
             return pd.DataFrame(columns=self.fields_full)
         df.columns = self.fields_full
+        df.fillna(0, inplace=True)
 
         # filter by time
         df = df[(df['clock'] >= startep) & (df['clock'] <= endep)]
@@ -115,3 +116,37 @@ class CsvGetter(DataGetter):
                     "item_name": row.get('item_name', '')
                 }
         return items
+    
+
+    def get_item_host_dict(self, itemIds: List[int]=[]) -> Dict[int, int]:
+        items = {}
+        # open items.csv.gz
+        with gzip.open(os.path.join(self.data_dir, self.items_filename), 'rt') as f:
+            csvreader = csv.DictReader(f)
+            for row in csvreader:
+                itemId = int(row['itemid'])
+                if itemId not in itemIds:
+                    continue
+                items[itemId] = int(row['hostid'])
+        return items
+
+    
+    # funtion to classify items by host groups
+    def classify_by_groups(self, itemIds: List[int], group_names: List[str]) -> dict:
+        items = {}
+        with gzip.open(os.path.join(self.data_dir, self.items_filename), 'rt') as f:
+            csvreader = csv.DictReader(f)
+            for row in csvreader:
+                if int(row['itemid']) not in itemIds:
+                    continue
+                items[row['itemid']] = {
+                    'group_name': row['group_name'],
+                    'hostid': row['hostid']
+                }
+
+        groups = {}
+        for group_name in group_names:
+            groups[group_name] = [int(itemid) for itemid, item in items.items() if item['group_name'] == group_name]
+
+        return groups
+        

@@ -14,7 +14,7 @@ class AnomaliesModel(Model):
     """
     sql_template = "anomalies"
     name = sql_template
-    fields = ["group_name", "itemid", "hostid", "host_name", "item_name"]
+    fields = ["itemid", "created", "hostid", "clusterid", "group_name", "host_name", "item_name"]
 
     def get_data(self, where_conds: List[str] = []) -> pd.DataFrame:
         sql = f"SELECT * FROM {self.table_name}"
@@ -28,13 +28,32 @@ class AnomaliesModel(Model):
         return df
     
     
-    def import_data(self, data: pd.DataFrame):
-        self.truncate()
-
+    def insert_data(self, data: pd.DataFrame):
         for _, row in data.iterrows():
             sql = f"""INSERT INTO {self.table_name} 
-(group_name, itemid, hostid, host_name, item_name) 
-VALUES 
-('{row.group_name}', {row.itemid}, {row.hostid}, '{row.host_name}', '{row.item_name}');"""
+    (itemid, created, hostid, clusterid, group_name, host_name, item_name) 
+    VALUES 
+    ({row.itemid}, {row.created}, 
+     {row.hostid}, {row.clusterid}, 
+     '{row.group_name}', '{row.host_name}', '{row.item_name}')"""
             self.db.exec_sql(sql)
 
+
+    def delete_old_entries(self, oldep: int):
+        sql = f"delete from {self.table_name} WHERE created < {oldep};"
+        self.db.exec_sql(sql)
+
+    
+    def filter_itemIds(self, itemIds: List[int], created: int):
+        sql = f"select itemid from {self.table_name} where created >= {created} and itemid in (%s);" % ",".join(map(str, itemIds))
+        cur = self.db.exec_sql(sql)
+        ex_itemIds = []
+        for (itemId,) in cur:
+            ex_itemIds.append(itemId)
+        
+        # exclude ex_itemIds from itemIds
+        itemIds = [itemId for itemId in itemIds if itemId not in ex_itemIds]
+
+        return itemIds
+
+    

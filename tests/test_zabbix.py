@@ -38,7 +38,7 @@ class TestZabbix(unittest.TestCase):
             if df is None:
                 continue
             df.to_csv(f"{output}_{data_source_name}.csv", index=False)
-            viewer.prepare(config, output)
+            viewer.prepare(config)
 
 
 

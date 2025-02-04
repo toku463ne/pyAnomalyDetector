@@ -14,9 +14,9 @@ class AnomaliesModel(Model):
     """
     sql_template = "anomalies"
     name = sql_template
-    fields = ["group_name", "groupid", "itemid", "hostid", "host_name", "item_name"]
+    fields = ["group_name", "itemid", "hostid", "host_name", "item_name"]
 
-    def get_data(self, where_conds: List[str]) -> pd.DataFrame:
+    def get_data(self, where_conds: List[str] = []) -> pd.DataFrame:
         sql = f"SELECT * FROM {self.table_name}"
         if len(where_conds) > 0:
             sql += " WHERE " + " AND ".join(where_conds)

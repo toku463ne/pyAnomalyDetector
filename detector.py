@@ -57,8 +57,8 @@ def run(config_file: str, endep: int = 0,
 
     # data processing
     clusters = {}
-    for data_source in data_sources.items():
-        data_source_name = data_source_name["name"]
+    for data_source in data_sources:
+        data_source_name = data_source["name"]
         ms = ModelsSet(data_source_name)
         dg = data_getter.get_data_getter(data_source)
 

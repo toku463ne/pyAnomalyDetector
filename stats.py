@@ -35,8 +35,8 @@ def update_stats(config_file: str,
     endep -= 1
 
     # update stats
-    for data_source_name, data_source in data_sources.items():
-        data_source["name"] = data_source_name
+    for data_source in data_sources:
+        data_source_name = data_source["name"] 
         oldstartep: int = 0
         startep: int = 0
         diff_startep: int = 0

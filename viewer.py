@@ -11,11 +11,12 @@ def prepare(config_file: str) :
     config_loader.load_config(config_file)
     conf = config_loader.conf
 
-    for view_source in conf.get('view_sources', []).items():
+    for view_source in conf.get('view_sources', []):
         ms = ModelsSet(view_source["data_source_name"])
         df = ms.anomalies.get_data()
         v = views.get_view(view_source)
-        v.show(df)
+        if v is not None:
+            v.show(df)
 
 
 
@@ -24,12 +25,10 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
-    parser.add_argument('-d', '--data', type=str, help='output of anomaly detection')
 
     args = parser.parse_args()
     config_file = args.config
-    data_file = args.data
 
-    clusters = prepare(config_file, data_file)
+    clusters = prepare(config_file)
 
     

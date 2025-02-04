@@ -393,7 +393,7 @@ def detect(data_source,
             
     results = pd.DataFrame({'group_name': group_names, 
                             'clusteriId': clusterIds,
-                            'itemid': itemIds, 'hostid': hostIds, 
+                            'itemid': target_itemIds, 'hostid': hostIds, 
                             'host_name': host_names, 'item_name': item_names})
     
     ms.anomalies.import_data(results)

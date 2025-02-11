@@ -27,20 +27,21 @@ class ZabbixGetter(DataGetter):
 
     def get_history_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
         if len(itemIds) > 0:
-            where_itemIds = " AND itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
+            where_itemIds = " AND itemid = ANY(ARRAY[" + ",".join([str(itemid) for itemid in itemIds]) + "])"
         else:
             where_itemIds = ""
         
         # join history and history_uint tables
         sql = f"""
+            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
             SELECT itemid, clock, value
             FROM history
-            WHERE clock >= {startep} AND clock <= {endep}
+            WHERE clock BETWEEN {startep} AND {endep}
             {where_itemIds}
-            UNION
+            UNION ALL
             SELECT itemid, clock, value
             FROM history_uint
-            WHERE clock >= {startep} AND clock <= {endep}
+            WHERE clock BETWEEN {startep} AND {endep}
             {where_itemIds}
         """
 
@@ -55,20 +56,21 @@ class ZabbixGetter(DataGetter):
 
     def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
         if len(itemIds) > 0:
-            where_itemIds = " AND itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
+            where_itemIds = " AND itemid = ANY(ARRAY[" + ",".join([str(itemid) for itemid in itemIds]) + "])"
         else:
             where_itemIds = ""
         
         # join trends and trends_uint tables
         sql = f"""
+            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
             SELECT itemid, clock, value_avg as value
             FROM trends
-            WHERE clock >= {startep} AND clock <= {endep}
+            WHERE clock BETWEEN {startep} AND {endep}
             {where_itemIds}
             UNION
             SELECT itemid, clock, value_avg as value
             FROM trends_uint
-            WHERE clock >= {startep} AND clock <= {endep}
+            WHERE clock BETWEEN {startep} AND {endep}
             {where_itemIds}
         """
 

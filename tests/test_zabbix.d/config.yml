@@ -13,6 +13,7 @@ data_sources:
     user: monitoring
     password: '{{ ZABBIX_DB_PASSWORD }}'
     port: 5432
+    retries: 3
 
 view_sources:
   - name: "test_zabbix"
@@ -32,3 +33,5 @@ group_names:
   - app/sim
   - app/iim
 
+history_retention: 24
+trends_retention: 16

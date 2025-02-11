@@ -277,7 +277,7 @@ def _classify_anomalies(ms: ModelsSet, itemIds: List[int],
     
 
 def detect(data_source, 
-           t_startep: int, startep2: int, endep: int, 
+           t_startep: int, startep2: int, endep: int, anomaly_keep_secs: int,
            lambda1_threshold: float, lambda2_threshold: float, lambda3_threshold: float,
            trends_min_count: int,
            base_clocks: List[int],
@@ -366,6 +366,7 @@ def detect(data_source,
                             'host_name': host_names, 'item_name': item_names})
     
     ms.anomalies.insert_data(results)
+    ms.anomalies.delete_old_entries(endep - anomaly_keep_secs)
     return results
 
     

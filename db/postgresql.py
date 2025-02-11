@@ -7,6 +7,7 @@ class PostgreSqlDB:
 	def __init__(self, config):
 		self.conn = None
 		self.config = config
+		self.retries = config.get('retries', 1)
 
 
 	def connect(self):
@@ -22,15 +23,20 @@ class PostgreSqlDB:
 	
 
 	def exec_sql(self, sql):
+		retries = self.retries
 		cur = None
-		try:
-			cur = self.connect().cursor()
-			cur.execute(sql)
-			return cur
-		except:
-			if cur: cur.close()
-			print(sql)
-			raise
+		for i in range(retries):
+			try:
+				cur = self.connect().cursor()
+				cur.execute(sql)
+				return cur
+			except psycopg2.errors.SerializationFailure:
+				if i < retries - 1:
+					time.sleep(delay)  # Wait before retrying
+				else:
+					raise  # Give up after max retries
+		raise Exception("SQL failed after max tries")
+	
 
 	def truncate_table(self, tablename):
 		sql = "truncate table %s;" % tablename

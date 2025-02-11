@@ -49,6 +49,7 @@ trends_min_count: 14
 history_interval: 600
 history_retention: 18
 history_recent_retention: 6
+anomaly_keep_secs: 86400 # 1day  
 
 ##################################################
 #  kmeans clustering params

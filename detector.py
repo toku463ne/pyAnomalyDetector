@@ -40,6 +40,7 @@ def run(config_file: str, endep: int = 0,
     history_retention = conf.get('history_retention', 18)
     trend_retention = conf.get('trend_retention', 8*14)
     trends_min_count = conf.get('trends_min_count', 14)
+    anomaly_keep_secs = conf.get('anomaly_keep_secs', 86400)
     history_recent_retention = conf.get('history_recent_retention', 6)
     h_startep1 = endep - history_retention * history_interval
     h_startep2 = endep - history_recent_retention * history_interval
@@ -113,7 +114,7 @@ def run(config_file: str, endep: int = 0,
 
         # detect anomaly
         data = detector.detect(data_source, 
-           t_startep, h_startep2, endep,
+           t_startep, h_startep2, endep, anomaly_keep_secs,
            lambda1_threshold, lambda2_threshold, lambda3_threshold,
            trends_min_count,
            base_clocks,

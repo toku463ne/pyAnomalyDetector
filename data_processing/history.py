@@ -43,6 +43,3 @@ def update_history(data_source, itemIds: List[int], base_clocks: List[int], olde
         # update history
         _update_history_batch(dg, ms, batch_itemIds, base_clocks, oldep)
         
-        
-
-    

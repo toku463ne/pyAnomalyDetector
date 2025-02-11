@@ -3,7 +3,7 @@
 #from models.trends import TrendsModel
 from models.trends_stats import TrendsStatsModel
 from models.history import HistoryModel
-#from models.history_stats import HistoryStatsModel
+from models.history_stats import HistoryStatsModel
 from models.trends_updates import TrendsUpdatesModel
 from models.history_updates import HistoryUpdatesModel
 #from models.recent_anomalies import RecentAnomalyModel
@@ -20,6 +20,7 @@ class ModelsSet:
         self.trends_stats = TrendsStatsModel(data_source_name)
         self.history = HistoryModel(data_source_name)
         self.history_updates = HistoryUpdatesModel(data_source_name)
+        self.history_stats = HistoryStatsModel(data_source_name)
         self.trends_updates = TrendsUpdatesModel(data_source_name)
         self.anomalies = AnomaliesModel(data_source_name)
         #self.recent_anomalies = RecentAnomalyModel(data_source_name)
@@ -34,7 +35,7 @@ class ModelsSet:
         #self.trends.truncate()
         self.trends_stats.truncate()
         self.history.truncate()
-        #self.history_stats.truncate()
+        self.history_stats.truncate()
         self.history_updates.truncate()
         self.trends_updates.truncate()
         #self.recent_anomalies.truncate()
@@ -44,6 +45,7 @@ class ModelsSet:
         for m in [self.trends_stats, 
                   self.history, 
                   self.history_updates, 
+                  self.history_stats,
                   self.trends_updates, 
                   #self.recent_anomalies, 
                   self.anomalies]:

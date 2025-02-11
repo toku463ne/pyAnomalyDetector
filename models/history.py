@@ -2,6 +2,7 @@ import pandas as pd
 from typing import List
 
 from models.model import Model
+import utils.normalizer as normalizer
 
 class HistoryModel(Model):
     sql_template = "history"
@@ -51,5 +52,12 @@ class HistoryModel(Model):
         self.db.exec_sql(sql)        
         
 
-    
-    
+    def import_history(self, hist_df: pd.DataFrame, base_clocks: List[int]):
+        itemids = hist_df['itemid'].tolist()
+        
+        for itemid in itemids:
+            idx = hist_df[hist_df['itemid'] == itemid].index
+            clocks = hist_df.loc[idx, 'clock'].tolist()
+            values = hist_df.loc[idx, 'value'].tolist()
+            values = normalizer.fit_to_base_clocks(base_clocks, clocks, values)
+            self.upsert([itemid]*len(base_clocks), base_clocks, values)

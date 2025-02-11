@@ -3,7 +3,7 @@ import time
 
 import __init__
 import detector
-import stats
+import trends_stats
 import check_conn
 import viewer
 import testlib

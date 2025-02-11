@@ -3,7 +3,7 @@ batch_size: 5
 data_sources:
   - name: "test_stats"
     type: "csv"
-    data_dir: "tests/testdata/csv"
+    data_dir: "tests/testdata/csv/20250128"
 
 trends_interval: 86400
 trends_retention: 7

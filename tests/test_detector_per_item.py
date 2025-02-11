@@ -1,7 +1,7 @@
 import unittest
 
 import __init__
-import stats
+import trends_stats
 import detector
 from models.models_set import ModelsSet
 import utils.config_loader as config_loader
@@ -10,7 +10,7 @@ class TestDetector(unittest.TestCase):
     def _test_item(self, config_file, endep, itemId, expected_anomal=False):
         itemIds = [itemId]
         # first data load
-        stats.update_stats(config_file, endep, 0, initialize=True, itemIds=itemIds) 
+        trends_stats.update_stats(config_file, endep, 0, initialize=True, itemIds=itemIds) 
 
         results = detector.run(config_file, endep, itemIds=itemIds, initialize=True)
         if expected_anomal:

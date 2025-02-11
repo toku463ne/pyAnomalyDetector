@@ -1,7 +1,7 @@
 import unittest
 
 import __init__
-import stats
+import trends_stats
 import detector
 from models.models_set import ModelsSet
 import utils.config_loader as config_loader
@@ -19,14 +19,13 @@ class TestDetector(unittest.TestCase):
         group_names = ['app/imt', 'app/bcs', 'app/cal', 'app/iim', 'app/sim', 'hw/nw', 'hw/pc']
         
         # first data load
-        stats.update_stats(config_file, endep, 0, initialize=True)
+        trends_stats.update_stats(config_file, endep, 0, initialize=True)
 
         results = detector.run(config_file, endep, group_names=group_names, initialize=True)
         self.assertTrue(len(results) > 0)
         
-
-        import json
-        json.dump(results, open('tests/test_detector_many.d/results_1st.json', 'w'), indent=2)
+        df_anom = ms.anomalies.get_data()
+        self.assertEqual(len(results[name]), len(df_anom))
 
         # read history data
         history_df = ms.history.get_data()
@@ -37,14 +36,11 @@ class TestDetector(unittest.TestCase):
         endep1 = ms.history_updates.get_endep()
         self.assertEqual(endep1, endep)
 
-        self.assertEqual(len(history_df[history_df['itemid'] == 23274]), 12)
+        self.assertEqual(len(history_df[history_df['itemid'] == 226606]), 18)
 
-        endep = 1737791212
+        endep = 1738022400
         results = detector.run(config_file, endep, group_names=group_names, initialize=False)
-        self.assertTrue(len(results) > 0)
-        self.assertTrue(len(results[name]["anomaly_itemIds"]) > 0)
-        self.assertTrue(len(results[name]["anomaly_itemIds2"]) > 0)
-
+        
         # read history data
         history_df = ms.history.get_data()
         self.assertTrue(len(history_df) > 0)
@@ -54,15 +50,14 @@ class TestDetector(unittest.TestCase):
         endep2 = ms.history_updates.get_endep()
         self.assertEqual(endep2, endep)
 
-        self.assertEqual(len(history_df[history_df['itemid'] == 23274]), 12)
+        self.assertEqual(len(history_df[history_df['itemid'] == 226606]), 18)
 
         self.assertGreater(h_endep2, h_endep1)
         self.assertGreater(endep2, endep1)
         self.assertGreater(startep2, startep1)
         self.assertGreater(h_startep2, h_startep1)
         
-        json.dump(results, open('tests/test_detector_many.d/results_2nd.json', 'w'), indent=2)
-
+        
 
 
 

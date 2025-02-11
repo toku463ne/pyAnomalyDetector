@@ -4,7 +4,7 @@ from typing import List, Dict, Tuple
 import utils.config_loader as config_loader
 from models.models_set import ModelsSet
 import data_processing.detector as detector
-import data_processing.history as history
+from data_processing.history_stats import HistoryStats
 import data_getter
 import utils.normalizer as normalizer
 
@@ -62,9 +62,11 @@ def run(config_file: str, endep: int = 0,
         ms = ModelsSet(data_source_name)
         dg = data_getter.get_data_getter(data_source)
 
+        oldstartep = ms.history_updates.get_startep()
+
         if initialize:
             ms.history.truncate()
-            #ms.recent_anomalies.truncate()
+            ms.history_stats.truncate()
             ms.anomalies.truncate()
             ms.history_updates.truncate()
 
@@ -80,7 +82,6 @@ def run(config_file: str, endep: int = 0,
         oldendep = ms.history_updates.get_endep()
         if oldendep > 0:
             if h_startep1 > oldendep:
-                ms.history.truncate()
                 ms.history_updates.truncate()
                 diff_startep = h_startep1
             else:
@@ -88,22 +89,34 @@ def run(config_file: str, endep: int = 0,
         else:
             diff_startep = h_startep1
         
-        existing, nonexisting = ms.history.separate_existing_itemIds(itemIds)
-
+        hs = HistoryStats(data_source=data_source, 
+                          item_names=item_names, 
+                          host_names=host_names, 
+                          group_names=group_names, 
+                          itemIds=itemIds, 
+                          max_itemIds=max_itemIds)
         if skip_history_update == False:
+            ms.history.truncate()
+            hs.update_stats(h_startep1, diff_startep, endep, oldstartep)
+
             # update history
-            if len(existing) > 0:
-                base_clocks_diff = normalizer.get_base_clocks(diff_startep, endep, history_interval)
-                history.update_history(data_source, existing, base_clocks_diff, h_startep1)
-            if len(nonexisting) > 0:
-                base_clocks_full = normalizer.get_base_clocks(h_startep1, endep, history_interval)
-                history.update_history(data_source, nonexisting, base_clocks_full, h_startep1)
+            #if len(existing) > 0:
+            #    #base_clocks_diff = normalizer.get_base_clocks(diff_startep, endep, history_interval)
+            #    #history.update_history(data_source, existing, base_clocks_diff, h_startep1)
+            #    history.update_history(data_source, existing, diff_startep, endep)
+            #if len(nonexisting) > 0:
+            #    #base_clocks_full = normalizer.get_base_clocks(h_startep1, endep, history_interval)
+            #    #history.update_history(data_source, nonexisting, base_clocks_full, h_startep1)
+            #    history.update_history(data_source, nonexisting, h_startep1, endep)
+
+        base_clocks = normalizer.get_base_clocks(h_startep1, endep-1, history_interval)
 
         # detect anomaly
         data = detector.detect(data_source, 
            t_startep, h_startep2, endep,
            lambda1_threshold, lambda2_threshold, lambda3_threshold,
            trends_min_count,
+           base_clocks,
            itemIds, group_names, 
            k, threshold, max_iterations, n_rounds,
            anomaly_valid_count_rate)

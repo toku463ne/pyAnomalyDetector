@@ -1,7 +1,7 @@
 import unittest
 
 import __init__
-import stats
+import trends_stats
 import detector
 from models.models_set import ModelsSet
 import utils.config_loader as config_loader
@@ -19,7 +19,7 @@ class TestDetector(unittest.TestCase):
         itemIds = [23274,33026,242424,242425,255260,61466,61472,61618,247790,57382]
         
         # first data load
-        stats.update_stats(config_file, endep, 0, itemIds=itemIds, initialize=True)
+        trends_stats.update_stats(config_file, endep, 0, itemIds=itemIds, initialize=True)
 
         results = detector.run(config_file, endep, itemIds=itemIds, initialize=True)
         self.assertTrue(len(results) > 0)

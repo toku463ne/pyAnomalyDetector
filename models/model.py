@@ -15,6 +15,7 @@ class Model:
             self.table_name = f"{data_source_name}.{self.name}"
         self.db = PostgreSqlDB(config_loader.conf['admdb'])
         self.db.create_table(self.table_name, self.sql_template)
+        self.batch_size = config_loader.conf["batch_size"]
 
     def truncate(self):
         self.db.exec_sql(f"TRUNCATE TABLE {self.table_name};")

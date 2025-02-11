@@ -15,13 +15,6 @@ class ZabbixDashboard(View):
 
 
     # show dashboard
-    """data
-    group_name	character varying(255) NULL	
-    itemid	integer NULL	
-    hostid	integer NULL	
-    host_name	character varying(255) NULL	
-    item_name	character varying(255) NULL	
-    """
     def show(self, data: pd.DataFrame):
         # get min(itemid) for each group_name, hostid
         data = data.groupby(["group_name", "hostid"]).agg({"itemid": "min"}).reset_index()

@@ -65,8 +65,9 @@ kmeans:
 #  anomaly detection params
 ##################################################
 lambda1_threshold: 3.0 # lambda for the 1st filtering
-lambda2_threshold: 1.0 # lambda for the 2nd filtering (for history_retention)
-lambda3_threshold: 2.0 # lambda for the 2nd filtering (for history_recent_retention)
+lambda2_threshold: 2.0 # lambda for the 1st filtering
+lambda3_threshold: 1.0 # lambda for the 2nd filtering (for history_retention)
+lambda4_threshold: 2.0 # lambda for the 2nd filtering (for history_recent_retention)
 ignore_diff_rate: 0.2 # ignore if the peaks are just less than this rate
 anomaly_cache_period: 259200 # 3 days
 batch_size: 100

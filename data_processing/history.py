@@ -32,6 +32,7 @@ def _update_history_batch(dg, ms: ModelsSet, itemIds: List[int],
         ms.history.remove_old_data(oldep)
 
 
+
 def update_history(data_source, itemIds: List[int], base_clocks: List[int], oldep: int):
     batch_size = config_loader.conf["batch_size"]
     dg = data_getter.get_data_getter(data_source)

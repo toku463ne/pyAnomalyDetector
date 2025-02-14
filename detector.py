@@ -46,8 +46,9 @@ def run(config_file: str, endep: int = 0,
     h_startep2 = endep - history_recent_retention * history_interval
     t_startep = endep - trend_retention * trend_interval
     lambda1_threshold = conf.get('lambda1_threshold', 3.0)
-    lambda2_threshold = conf.get('lambda2_threshold', 1.0)
-    lambda3_threshold = conf.get('lambda3_threshold', 2.0)
+    lambda2_threshold = conf.get('lambda2_threshold', 2.0)
+    lambda3_threshold = conf.get('lambda3_threshold', 1.0)
+    lambda4_threshold = conf.get('lambda4_threshold', 2.0)
     anomaly_valid_count_rate = conf.get('anomaly_valid_count_rate', 0.8)
     kconf = conf.get("kmeans", {})
     k = kconf.get("k", 10)
@@ -97,7 +98,7 @@ def run(config_file: str, endep: int = 0,
                           itemIds=itemIds, 
                           max_itemIds=max_itemIds)
         if skip_history_update == False:
-            ms.history.truncate()
+            #ms.history.truncate()
             hs.update_stats(h_startep1, diff_startep, endep, oldstartep)
 
             # update history
@@ -112,15 +113,17 @@ def run(config_file: str, endep: int = 0,
 
         base_clocks = normalizer.get_base_clocks(h_startep1, endep-1, history_interval)
 
+
         # detect anomaly
         data = detector.detect(data_source, 
-           t_startep, h_startep2, endep, anomaly_keep_secs,
-           lambda1_threshold, lambda2_threshold, lambda3_threshold,
+           t_startep, h_startep1, h_startep2, endep, anomaly_keep_secs,
+           lambda1_threshold, lambda2_threshold, lambda3_threshold,lambda4_threshold,
            trends_min_count,
            base_clocks,
            itemIds, group_names, 
            k, threshold, max_iterations, n_rounds,
-           anomaly_valid_count_rate)
+           anomaly_valid_count_rate,
+           skip_history_update)
         clusters[data_source_name] = data
 
         # update history updates

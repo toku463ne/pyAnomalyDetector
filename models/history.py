@@ -61,3 +61,7 @@ class HistoryModel(Model):
             values = hist_df.loc[idx, 'value'].tolist()
             values = normalizer.fit_to_base_clocks(base_clocks, clocks, values)
             self.upsert([itemid]*len(base_clocks), base_clocks, values)
+
+    def remove_itemIds_not_in(self, itemIds: List[int]):
+        sql = f"DELETE FROM {self.table_name} WHERE itemid NOT IN ({','.join(map(str, itemIds))});"
+        self.db.exec_sql(sql)

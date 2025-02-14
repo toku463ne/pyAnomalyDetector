@@ -1,4 +1,5 @@
 import psycopg2
+import time
 from utils.config_loader import *
 from jinja2 import Template
 import pandas as pd
@@ -8,7 +9,7 @@ class PostgreSqlDB:
 		self.conn = None
 		self.config = config
 		self.retries = config.get('retries', 1)
-
+		self.delay = config.get('delay', 3)
 
 	def connect(self):
 		config = self.config
@@ -24,6 +25,7 @@ class PostgreSqlDB:
 
 	def exec_sql(self, sql):
 		retries = self.retries
+		delay = self.delay
 		cur = None
 		for i in range(retries):
 			try:
@@ -80,7 +82,7 @@ class PostgreSqlDB:
 	def table_exists(self, tableName, schema_name=""):
 		schemacond = ""
 		if schema_name != "":
-    			schemacond = f" AND schemaname = '{schema_name}'"
+			schemacond = f" AND schemaname = '{schema_name}'"
 		sql = """SELECT EXISTS (
     SELECT FROM pg_catalog.pg_tables
     WHERE tablename  = '%s' %s

@@ -37,11 +37,13 @@ class ZabbixGetter(DataGetter):
             SELECT itemid, clock, value
             FROM history
             WHERE clock BETWEEN {startep} AND {endep}
+            ORDER BY itemid, clock
             {where_itemIds}
             UNION ALL
             SELECT itemid, clock, value
             FROM history_uint
             WHERE clock BETWEEN {startep} AND {endep}
+            ORDER BY itemid, clock
             {where_itemIds}
         """
 
@@ -67,11 +69,13 @@ class ZabbixGetter(DataGetter):
             FROM trends
             WHERE clock BETWEEN {startep} AND {endep}
             {where_itemIds}
+            ORDER BY itemid, clock
             UNION
             SELECT itemid, clock, value_avg as value
             FROM trends_uint
             WHERE clock BETWEEN {startep} AND {endep}
             {where_itemIds}
+            ORDER BY itemid, clock
         """
 
         df = self.db.read_sql(sql)
@@ -94,11 +98,13 @@ class ZabbixGetter(DataGetter):
             FROM trends
             WHERE clock >= {startep} AND clock <= {endep}
             {where_itemIds}
+            ORDER BY itemid, clock
             UNION
             SELECT itemid, clock, value_min, value_avg, value_max
             FROM trends_uint
             WHERE clock >= {startep} AND clock <= {endep}
             {where_itemIds}
+            ORDER BY itemid, clock
         """
 
         df = self.db.read_sql(sql)

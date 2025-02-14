@@ -14,7 +14,7 @@ class AnomaliesModel(Model):
     """
     sql_template = "anomalies"
     name = sql_template
-    fields = ["itemid", "created", "hostid", "clusterid", "group_name", "host_name", "item_name"]
+    fields = ["itemid", "created", "group_name", "hostid", "clusterid", "host_name", "item_name"]
 
     def get_data(self, where_conds: List[str] = []) -> pd.DataFrame:
         sql = f"SELECT * FROM {self.table_name}"

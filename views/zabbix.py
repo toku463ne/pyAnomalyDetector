@@ -80,7 +80,7 @@ class ZabbixDashboard(View):
                                 'view_mode':'0',
                                 'fields':[
                                     {'type':'0','name':'source_type','value':'1'},
-                                    {'type':'4','name':'itemid','value':itemid}]
+                                    {'type':'4','name':'itemid','value':int(itemid)}]
                                 }
                         widgets.append(widget)
                         x += 1

@@ -28,6 +28,16 @@ class CsvGetter(DataGetter):
             return pd.DataFrame(columns=self.fields)
         df.columns = self.fields
 
+        # remove rows with str values
+        df = df[df['clock'] != 'clock']
+
+        # convert itemid to int
+        df['itemid'] = df['itemid'].astype(int)
+        # convert clock to int
+        df['clock'] = df['clock'].astype(int)
+        # convert value to float
+        df['value'] = df['value'].astype(float)
+
         # filter by time
         df = df[(df['clock'] >= startep) & (df['clock'] <= endep)]
 
@@ -53,8 +63,21 @@ class CsvGetter(DataGetter):
         if len(df) == 0:
             return pd.DataFrame(columns=self.fields_full)
         df.columns = self.fields_full
+        # remove rows including string 'clock' at clock
+        df = df[df['clock'] != 'clock']
         df.fillna(0, inplace=True)
+        # convert itemid to int
+        df['itemid'] = df['itemid'].astype(int)
+        # convert clock to int
+        df['clock'] = df['clock'].astype(int)
+        # convert value_avg to float
+        df['value_avg'] = df['value_avg'].astype(float)
+        # convert value_min to float
+        df['value_min'] = df['value_min'].astype(float)
+        # convert value_max to float
+        df['value_max'] = df['value_max'].astype(float)
 
+        
         # filter by time
         df = df[(df['clock'] >= startep) & (df['clock'] <= endep)]
 
@@ -72,7 +95,8 @@ class CsvGetter(DataGetter):
                     max_itemIds = 0,
                     itemIds: List[int] = []) -> List[int]:
         df = pd.read_csv(os.path.join(self.data_dir, self.history_filename))
-        results = df['itemid'].unique().tolist()
+        results = df['itemid'].unique().tolist()     
+
         # filter by itemIds
         if len(itemIds) > 0 and len(results) > 0:
             results = [itemid for itemid in results if itemid in itemIds]
@@ -145,6 +169,8 @@ class CsvGetter(DataGetter):
                 }
 
         groups = {}
+        if len(group_names) == 0:
+            groups['all'] = [int(itemid) for itemid, item in items.items()]
         for group_name in group_names:
             groups[group_name] = [int(itemid) for itemid, item in items.items() if item['group_name'] == group_name]
 

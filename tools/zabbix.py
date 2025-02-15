@@ -6,6 +6,10 @@ from data_getter.zabbix_getter import ZabbixGetter
 
 def trends2csv(data_source_config: Dict, itemIds: List[int], startep: int, endep: int, outfile: str):
     z = ZabbixGetter(data_source_config)
+    # remove outfile if exists
+    if os.path.exists(outfile):
+        os.remove(outfile)
+
     # do by batch
     for i in range(0, len(itemIds), 100):
         batch_itemIds = itemIds[i:i+100]
@@ -16,6 +20,10 @@ def trends2csv(data_source_config: Dict, itemIds: List[int], startep: int, endep
 
 def history2csv(data_source_config: Dict, itemIds: List[int], startep: int, endep: int, outfile: str):
     z = ZabbixGetter(data_source_config)
+    # remove outfile if exists
+    if os.path.exists(outfile):
+        os.remove(outfile)
+
     # do by batch
     for i in range(0, len(itemIds), 100):
         batch_itemIds = itemIds[i:i+100]
@@ -26,6 +34,10 @@ def history2csv(data_source_config: Dict, itemIds: List[int], startep: int, ende
 
 def ouput_item_relations(data_source_config: Dict, itemIds: List[int], group_names: List[str], outfile: str):
     z = ZabbixGetter(data_source_config)
+    # remove outfile if exists
+    if os.path.exists(outfile):
+        os.remove(outfile)
+
     df = z.get_item_relations(itemIds, group_names)
     #print(df)
 

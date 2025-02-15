@@ -69,7 +69,6 @@ class Stats:
 
     def _update_stats_batch(self, itemIds: List[int], 
                                 startep: int, diff_startep: int, endep: int, oldstartep: int):
-        ms = self.ms
         if diff_startep == 0:
             raise ValueError("diff_startep must be given")
         data = self._get_data(startep=diff_startep, endep=endep, itemIds=itemIds)

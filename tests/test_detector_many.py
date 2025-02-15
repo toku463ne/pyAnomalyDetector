@@ -15,14 +15,15 @@ class TestDetector(unittest.TestCase):
         ms = ModelsSet(name)
         ms.initialize()
 
-        endep = 1738022400 - 3600
+        endep = 1739505600 - 3600 # 2025/2/14 13:00 JST 
         group_names = ['app/imt', 'app/bcs', 'app/cal', 'app/iim', 'app/sim', 'hw/nw', 'hw/pc']
         
         # first data load
         trends_stats.update_stats(config_file, endep, 0, initialize=True)
 
         results = detector.run(config_file, endep, group_names=group_names, initialize=True)
-        self.assertTrue(len(results) > 0)
+        df = results[name]
+        self.assertTrue(len(df) > 0)
         
         df_anom = ms.anomalies.get_data()
         self.assertEqual(len(results[name]), len(df_anom))
@@ -38,7 +39,7 @@ class TestDetector(unittest.TestCase):
 
         self.assertEqual(len(history_df[history_df['itemid'] == 226606]), 18)
 
-        endep = 1738022400
+        endep = 1739505600
         results = detector.run(config_file, endep, group_names=group_names, initialize=False)
         
         # read history data

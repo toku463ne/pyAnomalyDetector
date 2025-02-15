@@ -405,7 +405,7 @@ def detect(data_source,
     anomaly_itemIds2 = []
     for i in range(0, len(anomaly_itemIds), batch_size):
         # get trends data
-        trends_df = dg.get_trends_full_data(startep=t_startep, endep=endep, itemIds=itemIds)
+        trends_df = dg.get_trends_full_data(startep=t_startep, endep=startep1, itemIds=itemIds)
         if trends_df.empty:
             return []
 

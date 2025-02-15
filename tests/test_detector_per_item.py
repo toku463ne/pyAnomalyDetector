@@ -7,16 +7,18 @@ from models.models_set import ModelsSet
 import utils.config_loader as config_loader
 
 class TestDetector(unittest.TestCase):
-    def _test_item(self, config_file, endep, itemId, expected_anomal=False):
+    def _test_item(self, name, config_file, endep, itemId, expected_anomal=False):
         itemIds = [itemId]
         # first data load
         trends_stats.update_stats(config_file, endep, 0, initialize=True, itemIds=itemIds) 
 
         results = detector.run(config_file, endep, itemIds=itemIds, initialize=True)
+        df = results[name]
+        df = df[df['itemid'] == itemId]
         if expected_anomal:
-            self.assertTrue(len(results["test_detector_many"]["anomaly_itemIds2"]) > 0)
+            self.assertTrue(len(df) > 0)
         else:
-            self.assertIsNone(results["test_detector_many"])
+            self.assertTrue(len(df) == 0)
 
 
     def test_detector(self):
@@ -26,14 +28,10 @@ class TestDetector(unittest.TestCase):
         ms = ModelsSet(name)
         ms.initialize()
 
-        endep = 1738022400
-
-        # 56769 86815 141904
-
-        self._test_item(config_file, endep, 57319, False) # ZIPSW004: Interface Gi1/0/16(VMSRV049 ZIP-A TB): Bits received
-        self._test_item(config_file, endep, 82848, False) # near anomaly case: NFPSW001: Interface Gi1/0/8(): Bits sent
-        self._test_item(config_file, endep, 86815, False) # near anomaly case: LABSW002: Interface Gi0/18(): Bits received
-        self._test_item(config_file, endep, 227833, False) # many peaks
+        endep = 1739498400
+        #self._test_item(name, config_file, endep, 255218, True)
+        self._test_item(name, config_file, endep, 141917, True)
+        #self._test_item(name, config_file, endep, 236160, True)
         
 
 

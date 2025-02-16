@@ -389,18 +389,9 @@ def detect(data_source,
     if len(anomaly_itemIds) == 0:
         return None
     
-    ## import history data using batch
-    #for i in range(0, len(anomaly_itemIds), batch_size):
-    #    batch_itemIds = anomaly_itemIds[i:i+batch_size]
-    #    history_df = dg.get_history_data(base_clocks[0], base_clocks[-1], batch_itemIds)
-    #    if history_df.empty:
-    #        continue
-    #    ms.history.import_history(history_df, base_clocks)
-    
     if not skip_history_update:
         _update_history(data_source, anomaly_itemIds, base_clocks, startep1)
         ms.history.remove_itemIds_not_in(anomaly_itemIds)
-
     
     anomaly_itemIds2 = []
     for i in range(0, len(anomaly_itemIds), batch_size):
@@ -409,18 +400,15 @@ def detect(data_source,
         if trends_df.empty:
             return []
 
-
         # second detection
         batch_itemIds = anomaly_itemIds[i:i+batch_size]
         history_df = ms.history.get_data(batch_itemIds)
         if history_df.empty:
             continue
-
             
         batch_anomaly_itemIds = _detect2_batch(history_df, trends_df, batch_itemIds, lambda2_threshold, ignore_diff_rate)
         if len(batch_anomaly_itemIds) == 0:
             continue
-        
 
         # third detection
         batch_anomaly_itemIds = _detect3_batch(ms, trends_df, base_clocks, batch_anomaly_itemIds, startep2, 

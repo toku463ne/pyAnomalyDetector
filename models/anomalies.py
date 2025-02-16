@@ -4,14 +4,6 @@ from typing import List
 from models.model import Model
 
 class AnomaliesModel(Model):
-    """ fields:
-            group_name STRING,
-            groupid INTEGER,
-            itemid INTEGER,
-            hostid INTEGER,
-            host_name STRING,
-            item_name STRING,
-    """
     sql_template = "anomalies"
     name = sql_template
     fields = ["itemid", "created", "group_name", "hostid", "clusterid", "host_name", "item_name"]

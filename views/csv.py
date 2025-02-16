@@ -9,8 +9,8 @@ class CsvViews(View):
         self.trends_file_path = config['trends_file_path']
 
 
-    def show(self, data_conf):
-        itemids = data_conf['anomaly_itemIds2']
+    def show(self, anomaly_data: pd.DataFrame):
+        target_itemids = anomaly_data['itemid'].unique()
         trends = pd.read_csv(self.trends_file_path)
         history = pd.read_csv(self.history_file_path)
 
@@ -18,13 +18,10 @@ class CsvViews(View):
         data = pd.concat([trends, history])
 
 
-        """
-        data: pandas.DataFrame with columns: 'itemid', 'clock', 'value'
-        plots data per itemid 
-        3 * 10 graphs as maximum in the given order
-        """
-
         itemids = data['itemid'].unique()
+        # limit to target_itemids
+        itemids = [itemid for itemid in itemids if itemid in target_itemids]
+
         itemids = itemids[:30]
 
         fig, axs = plt.subplots(10, 3, figsize=(20, 20))

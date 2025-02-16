@@ -15,8 +15,7 @@ admdb:
 #  supported types: zabbix_psql, http_csv
 ##################################################
 #data_sources:
-#  "zabbix":
-#    name: "zabbix"
+#  - name: "zabbix"
 #    type: "psql"
 #    host: 127.0.0.1
 #    dbname: zabbix

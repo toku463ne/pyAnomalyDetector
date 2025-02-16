@@ -28,10 +28,10 @@ class TestDetector(unittest.TestCase):
         ms = ModelsSet(name)
         ms.initialize()
 
-        endep = 1739498400
-        #self._test_item(name, config_file, endep, 255218, True)
-        self._test_item(name, config_file, endep, 141917, True)
-        #self._test_item(name, config_file, endep, 236160, True)
+        endep = 1739498400 # Fri Feb 14 11:00:00 AM JST 2025
+        self._test_item(name, config_file, endep, 255218, True)
+        self._test_item(name, config_file, endep, 141917, False)
+        self._test_item(name, config_file, endep, 236160, False)
         
 
 

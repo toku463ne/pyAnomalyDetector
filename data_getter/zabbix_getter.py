@@ -270,3 +270,19 @@ class ZabbixGetter(DataGetter):
         if len(rows) == 0:
             return {}
         return {row[0]: {"hostid": row[1], "host_name": row[2], "item_name": row[3]} for row in rows}
+    
+        # check if the itemid meets the condition
+    def check_itemId_cond(self, itemId: int, item_cond: str) -> bool:
+        if item_cond == "":
+            return True
+        sql = f"""
+            SELECT itemid
+            FROM items
+            WHERE itemid = {itemId} AND {item_cond}
+        """
+        cur = self.db.exec_sql(sql)
+        rows = cur.fetchall()
+        cur.close()
+        return len(rows) > 0
+    
+    

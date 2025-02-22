@@ -14,6 +14,54 @@ data_sources:
     password: '{{ ZABBIX_DB_PASSWORD }}'
     port: 5432
     retries: 3
+    item_conds: 
+      - name: ignore traffic lower than 8Mbps
+        item: key_ LIKE 'net.if.%.[%]' AND units = 'bps' 
+        value: #'value > 8000000'
+          operator: '>'
+          value: 8000000
+    item_diff_conds:
+      - name: ignore small changes in the CPU
+        item: key_ LIKE '%cpu.%' AND units = '%' 
+        value: #value > 8
+          operator: '>'
+          value: 8
+      - name: ignore small changes in the memory
+        item: "key_ LIKE '%mem.%' AND units = '%'"
+        value: #value > 8
+          operator: '>'
+          value: 8
+      - name: ignore small changes in the disk
+        item: "key_ LIKE '%vfs.fs.size%' AND units = '%'"
+        value: #value > 3
+          operator: '>'
+          value: 3
+      - name: ignore small changes in the disk
+        item: "key_ LIKE '%vfs.fs.size%' AND units = 'B'"
+        value: #value > 1000000000
+          operator: '>'
+          value: 1000000000
+      - name: ignore small changes in the disk inode
+        item: "key_ LIKE '%vfs.fs.inode%' AND units = '%'"
+        value: #value > 3
+          operator: '>'
+          value: 3
+      - name: ignore small changes in the web.test.time
+        item: "key_ LIKE 'web.test.time[%]' AND units = 's'"
+        value: #value > 1
+          operator: '>'
+          value: 1
+      - name: ignore small changes in the network traffics
+        item: "key_ LIKE 'net.if.%.[%]' AND units = 'bps'"
+        value: #value > 1000000
+          operator: '>'
+          value: 1000000
+      - name: ignore whole small percentage changes
+        item: "units = '%'"
+        value: #value > 3
+          operator: '>'
+          value: 3
+      
 
 view_sources:
   - name: "test_zabbix"
@@ -35,3 +83,4 @@ group_names:
 
 history_retention: 24
 trends_retention: 16
+

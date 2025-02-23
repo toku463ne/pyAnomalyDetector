@@ -21,7 +21,7 @@ class TestDetector(unittest.TestCase):
         # first data load
         trends_stats.update_stats(config_file, endep, 0, initialize=True)
 
-        results = detector.run(config_file, endep, group_names=group_names, initialize=True)
+        results = detector.run(config_file, endep, group_names=group_names, initialize=True, trace_mode=True)
         df = results[name]
         self.assertTrue(len(df) > 0)
         
@@ -37,7 +37,7 @@ class TestDetector(unittest.TestCase):
         endep1 = ms.history_updates.get_endep()
         self.assertEqual(endep1, endep)
 
-        self.assertEqual(len(history_df[history_df['itemid'] == 226606]), 18)
+        self.assertEqual(len(history_df[history_df['itemid'] == 255218]), 18)
 
         endep = 1739505600
         results = detector.run(config_file, endep, group_names=group_names, initialize=False)
@@ -51,7 +51,7 @@ class TestDetector(unittest.TestCase):
         endep2 = ms.history_updates.get_endep()
         self.assertEqual(endep2, endep)
 
-        self.assertEqual(len(history_df[history_df['itemid'] == 226606]), 18)
+        self.assertEqual(len(history_df[history_df['itemid'] == 255218]), 18)
 
         self.assertGreater(h_endep2, h_endep1)
         self.assertGreater(endep2, endep1)

@@ -14,6 +14,9 @@ class TestDetector(unittest.TestCase):
 
         results = detector.run(config_file, endep, itemIds=itemIds, initialize=True)
         df = results[name]
+        if df is None: 
+            self.assertTrue(not expected_anomal)
+            return
         df = df[df['itemid'] == itemId]
         if expected_anomal:
             self.assertTrue(len(df) > 0)

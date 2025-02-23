@@ -16,7 +16,8 @@ def run(config_file: str, endep: int = 0,
         itemIds: List[int] = None,
         max_itemIds = 0,
         initialize = False,
-        skip_history_update = False
+        skip_history_update = False,
+        trace_mode = False
         ) -> Tuple[Dict, Dict, Dict]:
     config_loader.load_config(config_file)
     conf = config_loader.conf
@@ -39,23 +40,10 @@ def run(config_file: str, endep: int = 0,
     trend_interval = conf.get('trend_interval', 3600*3)
     history_retention = conf.get('history_retention', 18)
     trend_retention = conf.get('trend_retention', 8*14)
-    trends_min_count = conf.get('trends_min_count', 14)
-    anomaly_keep_secs = conf.get('anomaly_keep_secs', 86400)
     history_recent_retention = conf.get('history_recent_retention', 6)
     h_startep1 = endep - history_retention * history_interval
     h_startep2 = endep - history_recent_retention * history_interval
     t_startep = endep - trend_retention * trend_interval
-    lambda1_threshold = conf.get('lambda1_threshold', 3.0)
-    lambda2_threshold = conf.get('lambda2_threshold', 2.0)
-    lambda3_threshold = conf.get('lambda3_threshold', 1.0)
-    lambda4_threshold = conf.get('lambda4_threshold', 2.0)
-    anomaly_valid_count_rate = conf.get('anomaly_valid_count_rate', 0.8)
-    kconf = conf.get("kmeans", {})
-    k = kconf.get("k", 10)
-    threshold = kconf.get("threshold", 0.1)
-    max_iterations = kconf.get("max_iterations", 10)
-    n_rounds = kconf.get("n_rounds", 10)
-    
 
     # data processing
     clusters = {}
@@ -116,14 +104,11 @@ def run(config_file: str, endep: int = 0,
 
         # detect anomaly
         data = detector.detect(data_source, 
-           t_startep, h_startep1, h_startep2, endep, anomaly_keep_secs,
-           lambda1_threshold, lambda2_threshold, lambda3_threshold,lambda4_threshold,
-           trends_min_count,
+           t_startep, h_startep1, h_startep2, endep,
            base_clocks,
            itemIds, group_names, 
-           k, threshold, max_iterations, n_rounds,
-           anomaly_valid_count_rate,
-           skip_history_update)
+           skip_history_update,
+           trace_mode=trace_mode)
         clusters[data_source_name] = data
 
         # update history updates

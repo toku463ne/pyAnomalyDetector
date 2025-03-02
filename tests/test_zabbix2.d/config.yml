@@ -6,7 +6,7 @@ admdb:
   port: 5432
 
 data_sources:
-  - name: "test_zabbix"
+  - name: "test_zabbix2"
     type: "zabbix"
     host: 192.168.32.101
     dbname: zabbix
@@ -69,13 +69,13 @@ data_sources:
       
 
 view_sources:
-  - name: "test_zabbix"
+  - name: "test_zabbix2"
     dashboard_name: "anomaly_check_new"
     type: "zabbix_dashboard"
     api_url: "http://192.168.32.10/zabbix"
     user: "{{ API_USER }}"
     password: "{{ API_PASSWORD }}"
-    data_source_name: "test_zabbix"
+    data_source_name: "test_zabbix2"
 
 group_names:
   - hw/nw

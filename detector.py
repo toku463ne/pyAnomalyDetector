@@ -71,8 +71,10 @@ def run(config_file: str, endep: int = 0,
 
         oldendep = ms.history_updates.get_endep()
         if oldendep > 0:
-            if h_startep1 > oldendep:
+            if h_startep1 > oldendep + history_interval*2:
                 ms.history_updates.truncate()
+                ms.history.truncate()
+                ms.history_stats.truncate()
                 diff_startep = h_startep1
             else:
                 diff_startep = oldendep + 1
@@ -113,6 +115,7 @@ def run(config_file: str, endep: int = 0,
 
         # update history updates
         if skip_history_update == False:
+            ms.history_updates.truncate()
             ms.history_updates.upsert_updates(h_startep1, endep)
 
     return clusters
@@ -124,23 +127,27 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
     parser.add_argument('--end', type=int, default=0, help='End epoch.')
-    parser.add_argument('--items', type=int, nargs='+', help='item names')
-    parser.add_argument('--hosts', type=int, nargs='+', help='host names')
-    parser.add_argument('--groups', type=int, nargs='+', help='host group names')
+    parser.add_argument('--itemids', type=int, nargs='+', help='itemids')
+    parser.add_argument('--items', type=str, nargs='+', help='item names')
+    parser.add_argument('--hosts', type=str, nargs='+', help='host names')
+    parser.add_argument('--groups', type=str, nargs='+', help='host group names')
     parser.add_argument('--output', type=str, help='output file', default="")
     parser.add_argument('--init', action='store_true', help='If clear DB first')
     parser.add_argument('--skip-history-update', action='store_true', help='skip to update local history')
+    parser.add_argument('--trace', action='store_true', help='trace mode')
     
 
     args = parser.parse_args()
     config_file = args.config
     endep = args.end
     items = args.items
+    itemIds = args.itemids
     hosts = args.hosts
     groups = args.groups
     output = args.output
+    trace_mode = args.trace
 
-    clusters = run(config_file, endep, items, hosts, groups, initialize=args.init, skip_history_update=args.skip_history_update)
+    clusters = run(config_file, endep, items, hosts, groups, itemIds, initialize=args.init, skip_history_update=args.skip_history_update, trace_mode=trace_mode)
 
     # pretty print json clusters
     import json

@@ -69,7 +69,7 @@ lambda3_threshold: 1.0 # lambda for the 2nd filtering (for history_retention)
 lambda4_threshold: 2.0 # lambda for the 2nd filtering (for history_recent_retention)
 ignore_diff_rate: 0.2 # ignore if the peaks are just less than this rate
 anomaly_valid_count_rate: 0.8 # valid anomaly if the count is more than this rate
-anomaly_cache_period: 259200 # 3 days
+anomaly_cache_period: 86400 # 1 day
 batch_size: 100
 
 ##################################################

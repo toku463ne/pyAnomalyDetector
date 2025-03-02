@@ -11,7 +11,7 @@ import testlib
 class TestZabbix(unittest.TestCase):
     def test_zabbix(self):
         os.environ["SECRET_PATH"] = "/home/minelocal/.creds/zabbix_api.yaml"
-        config = "tests/test_zabbix.d/config.yml"
+        config = "tests/test_zabbix2.d/config.yml"
         #group_names=["app/cal/sug5k/lab"]
         group_names=None
         #host_names=["lab-sug-mediator03"]
@@ -21,12 +21,12 @@ class TestZabbix(unittest.TestCase):
 
         # self.assertTrue(check_conn.run_check(config))
 
-        #stats.update_stats(config, endep=0, group_names=group_names, host_names=host_names, initialize=True, max_itemIds=max_itemIds)
+        endep = 1740787201
+        itemIds = [216657]
 
-        itemIds = [97780]
+        trends_stats.update_stats(config, endep=1740848580, itemIds=itemIds, group_names=group_names, host_names=host_names, initialize=True, max_itemIds=max_itemIds)
 
-
-        data = detector.run(config, endep=1740787201 , itemIds=itemIds, group_names=group_names, max_itemIds=max_itemIds, skip_history_update=True, trace_mode=True)
+        data = detector.run(config, endep=1740801601 , itemIds=itemIds, group_names=group_names, max_itemIds=max_itemIds, trace_mode=True, initialize=True)
         for data_source_name, df in data.items():
             if df is None:
                 continue

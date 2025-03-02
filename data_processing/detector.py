@@ -61,7 +61,7 @@ class Detector:
 
 
         # create a dataframe with adjacent value_xx peaks from trends_df
-        trends_diff = pd.DataFrame(columns=['itemid', 'clock', 'value', 'diff'])
+        trends_diff = pd.DataFrame(columns=['itemid', 'clock', 'value', 'diff'], dtype=object)
         for itemId in itemIds:
             df = trends_df2[trends_df2['itemid'] == itemId]
             df = df.copy()
@@ -99,7 +99,7 @@ class Detector:
         itemIds = stats_df['itemid'].tolist()
 
         # filter by defined conditions
-        if len(item_diff_conds) > 0:
+        if len(item_diff_conds) > 0 and len(itemIds) > 0:
             for itemId in itemIds:
                 for cond in item_diff_conds:
                     if dg.check_itemId_cond(itemId, cond['item']):
@@ -111,8 +111,8 @@ class Detector:
         return itemIds
 
     def _evaluate_cond(self, value: float, cond: Dict) -> bool:
-        operator = cond["operator"]
-        threshold = cond["value"]
+        operator = cond["value"]["operator"]
+        threshold = cond["value"]["value"]
         if operator == ">":
             return value > threshold
         elif operator == "<":
@@ -131,26 +131,6 @@ class Detector:
         trends_min_count = self.trends_min_count
         ignore_diff_rate = self.ignore_diff_rate
         means = ms.history_stats.read_stats(itemIds)[['itemid', 'mean']]
-
-        # filter by item_conds
-        if len(item_conds) > 0:
-            for itemId in itemIds:
-                for cond in item_conds:
-                    """
-                    conf format:
-                        name: ignore traffic lower than 8Mbps
-                        item: key_ LIKE 'net.if.%.[%]' AND units = 'bps' 
-                        value: #'value > 8000000'
-                        operator: '>'
-                        value: 8000000
-                    """
-                    if dg.check_itemId_cond(itemId, cond["item"]):
-                        value = means[means['itemid'] == itemId].iloc[0]['mean']
-                        if not self._evaluate_cond(value, cond):
-                            itemIds.remove(itemId)
-                            break
-                        
-                        
 
         # get stats
         t_stats = ms.trends_stats.read_stats(itemIds)[['itemid', 'mean', 'std', 'cnt']]
@@ -463,6 +443,12 @@ class Detector:
             values = normalizer.fit_to_base_clocks(base_clocks, clocks, values)
             charts[itemId] = pd.Series(data=values)
 
+        if len(charts) < 2:
+            return {}
+
+        if k >= len(charts):
+            k = 2
+
         # run kmeans
         clusters, _ = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
         return clusters
@@ -492,7 +478,7 @@ class Detector:
             batch_anomaly_itemIds = self._detect1_batch(batch_itemIds, lambda1_threshold)
             if len(batch_anomaly_itemIds) == 0:
                 continue
-            anomaly_itemIds.extend(batch_anomaly_itemIds)
+            anomaly_itemIds.extend(batch_anomaly_itemIds)        
 
         if self.trace_mode:
             self._print_item_trace("detect1(trends filter) result:", batch_anomaly_itemIds)
@@ -534,6 +520,26 @@ class Detector:
 
         if self.trace_mode:
             self._print_item_trace("detect2, detect3 result:", batch_anomaly_itemIds)
+
+        item_conds = self.item_conds
+        # filter by item_conds
+        if len(item_conds) > 0 and len(anomaly_itemIds2) > 0:
+            for itemId in anomaly_itemIds2:
+                for cond in item_conds:
+                    """
+                    conf format:
+                        name: ignore traffic lower than 8Mbps
+                        item: key_ LIKE 'net.if.%.[%]' AND units = 'bps' 
+                        value: #'value > 8000000'
+                        operator: '>'
+                        value: 8000000
+                    """
+                    if dg.check_itemId_cond(itemId, cond["item"]):
+                        value = means[means['itemid'] == itemId].iloc[0]['mean']
+                        if not self._evaluate_cond(value, cond):
+                            itemIds.remove(itemId)
+                            break
+                        
 
 
         host_itemIds = dg.get_item_host_dict(anomaly_itemIds2)

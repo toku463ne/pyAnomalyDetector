@@ -104,15 +104,14 @@ class Detector:
         itemIds = stats_df['itemid'].tolist()
 
         # filter by defined conditions
-        if len(item_diff_conds) > 0 and len(itemIds) > 0:
-            for itemId in itemIds:
-                for cond in item_diff_conds:
-                    if dg.check_itemId_cond(itemId, cond['item']):
-                        value = stats_df[stats_df['itemid'] == itemId].iloc[0]['diff']
-                        if not self._evaluate_cond(value, cond):
-                            itemIds.remove(itemId)
-                            break
-
+        #if len(item_diff_conds) > 0 and len(itemIds) > 0:
+        #    for cond in item_diff_conds:
+        #        itemIds2 = dg.check_itemId_cond(itemIds, cond['item'])
+        #        for itemId in itemIds2:
+        #            value = stats_df[stats_df['itemid'] == itemId].iloc[0]['diff']
+        #            if self._evaluate_cond(value, cond) == False:
+        #                itemIds.remove(itemId)
+        #                break
         return itemIds
 
     def _evaluate_cond(self, value: float, cond: Dict) -> bool:
@@ -155,8 +154,47 @@ class Detector:
         if self.trace_mode:
             self._print_trace("detect1: filter by ignore_diff_rate", h_stats_df)
 
+
         # get itemIds
         itemIds = h_stats_df['itemid'].tolist()
+
+        dg = self.dg
+
+        # filter by defined conds
+        log(f"detector.filter_by_cond(itemIds)")
+        item_conds = self.item_conds
+        if len(item_conds) > 0 and len(itemIds) > 0:
+            for cond in item_conds:
+                if len(itemIds) == 0:
+                    break
+                itemIds2 = dg.check_itemId_cond(itemIds, cond["item"])
+                for itemId in itemIds2:    
+                    value = means[means['itemid'] == itemId].iloc[0]['mean']
+                    if self._evaluate_cond(value, cond) == False:
+                        itemIds.remove(itemId)
+
+        if self.trace_mode:
+            self._print_item_trace("filter by item_conds", itemIds)
+
+        if len(itemIds) == 0:
+            return []
+
+        # filter by defined diff conds
+        item_diff_conds = self.item_diff_conds
+        h_stats_df['diff'] = abs(h_stats_df['mean_h'] - h_stats_df['mean_t'])
+        if len(item_diff_conds) > 0 and len(itemIds) > 0:
+            for cond in item_diff_conds:
+                if len(itemIds) == 0:
+                    break
+                itemIds2 = dg.check_itemId_cond(itemIds, cond['item'])
+                for itemId in itemIds2:
+                    value = h_stats_df[h_stats_df['itemid'] == itemId].iloc[0]['diff']
+                    if self._evaluate_cond(value, cond) == False:
+                        itemIds.remove(itemId)
+                        break
+        
+        if self.trace_mode:
+            self._print_item_trace("filter by diff item_conds", itemIds)
 
         return itemIds
 
@@ -465,25 +503,23 @@ class Detector:
         item_conds = self.item_conds
         # filter by item_conds
         if len(item_conds) > 0 and len(itemIds) > 0:
-            for itemId in itemIds:
-                for cond in item_conds:
-                    """
-                    conf format:
-                        name: ignore traffic lower than 8Mbps
-                        item: key_ LIKE 'net.if.%.[%]' AND units = 'bps' 
-                        value: #'value > 8000000'
-                        operator: '>'
-                        value: 8000000
-                    """
-                    if dg.check_itemId_cond(itemId, cond["item"]):
-                        value = means[means['itemid'] == itemId].iloc[0]['mean']
-                        if not self._evaluate_cond(value, cond):
-                            itemIds.remove(itemId)
-                            break
+            for cond in item_conds:
+                """
+                conf format:
+                    name: ignore traffic lower than 8Mbps
+                    item: key_ LIKE 'net.if.%.[%]' AND units = 'bps' 
+                    value: #'value > 8000000'
+                    operator: '>'
+                    value: 8000000
+                """
+                itemIds2 = dg.check_itemId_cond(itemIds, cond["item"])
+                for itemId in itemIds2:    
+                    value = means[means['itemid'] == itemId].iloc[0]['mean']
+                    if self._evaluate_cond(value, cond) == False:
+                        itemIds.remove(itemId)
 
         if self.trace_mode:
             self._print_item_trace("filter by item_conds", itemIds)
-        
         return itemIds
                         
 
@@ -506,12 +542,11 @@ class Detector:
         lambda4_threshold = self.lambda4_threshold
         k = self.k
 
+        log(f"detector.detect1_batch(batch_itemIds, {lambda1_threshold}) (1st time)")
         for i in range(0, len(itemIds), batch_size):
             batch_itemIds = itemIds[i:i+batch_size]
-
             t_stats = ms.trends_stats.read_stats(itemIds)[['itemid', 'mean', 'std', 'cnt']]
             # first detection
-            log(f"detector.detect1_batch(batch_itemIds, {lambda1_threshold}) (1st time)")
             batch_anomaly_itemIds = self._detect1_batch(batch_itemIds, t_stats, lambda1_threshold)
             if len(batch_anomaly_itemIds) == 0:
                 continue
@@ -524,7 +559,7 @@ class Detector:
             return None
         
         if not skip_history_update:
-            log(f"detector.update_history(anomaly_itemIds, {base_clocks}, {startep1})")
+            log(f"detector.update_history(anomaly_itemIds, base_clocks, {startep1})")
             self._update_history(anomaly_itemIds, base_clocks, startep1)
             ms.history.remove_itemIds_not_in(anomaly_itemIds)
         
@@ -573,6 +608,8 @@ class Detector:
         if self.trace_mode:
             self._print_item_trace("detect2, detect3 result:", batch_anomaly_itemIds)
 
+        if len(anomaly_itemIds2) == 0:
+            return None
 
         host_itemIds = dg.get_item_host_dict(anomaly_itemIds2)
 
@@ -587,9 +624,8 @@ class Detector:
                     
         groups_info = dg.classify_by_groups(anomaly_itemIds2, group_names)
 
-        # filter by item_conds
-        log(f"detector.filter_by_cond(anomaly_itemIds2)")
-        anomaly_itemIds2 = self._filter_by_cond(anomaly_itemIds2)
+        if len(anomaly_itemIds2) == 0:
+            return None
 
         # results in df with columns: itemId, hostId, host_name, item_name, clusterId, group_name
         target_itemIds = []

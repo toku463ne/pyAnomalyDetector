@@ -4,6 +4,6 @@ source $HOME/venv/bin/activate
 export SECRET_PATH="$HOME/.creds/zabbix_api.yaml"
 end=$(date +"%s")
 end=$(expr $end - 300)
-echo "$(date) python3 detector.py --end $end $@" >> /tmp/anom_detector_epochs.log
-date;time python3 detector.py --end $end $@ &> /tmp/anom_detector.log
+echo "$(date) python3 detector.py --end $end $@"
+date;time python3 detector.py --end $end $@ 
 echo completed

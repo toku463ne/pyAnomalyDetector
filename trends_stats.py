@@ -31,8 +31,8 @@ def update_stats(config_file: str,
 
     # update stats
     for data_source in data_sources:
-        log(f"processing data source: {data_source}")
         data_source_name = data_source["name"] 
+        log(f"processing data source: {data_source_name}")
         oldstartep: int = 0
         startep: int = 0
         diff_startep: int = 0

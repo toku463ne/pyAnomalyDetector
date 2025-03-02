@@ -43,9 +43,6 @@ def load_config(config_path=None, additional_context={}):
     for k in os.environ:
         context[k] = os.environ[k]
 
-    # default log directory
-    if LOG_DIR not in context:
-        context[LOG_DIR] = "/tmp"
 
     context.update(secrets)
     context.update(additional_context)
@@ -54,11 +51,18 @@ def load_config(config_path=None, additional_context={}):
 
     l = conf.get("logging", None)
     if l:
+        # default log directory
+        if LOG_DIR in context:
+            log_file = f"{context[LOG_DIR]}/anomdec.log"
+        elif "log_file" in l:
+            log_file = l["log_file"]
+        else:
+            log_file = f"/tmp/anomdec.log"
         # setup logging
         logging.basicConfig(
-            filename=l.get("file", "anomdec.log"),
+            filename=log_file,
             level=getattr(logging, l.get("level", "INFO").upper(), logging.INFO),
-            format=l.get("format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            format=l.get("format", "%(asctime)s %(levelname)s %(message)s")
         )
     else:
         # log to stdout

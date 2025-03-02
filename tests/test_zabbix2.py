@@ -22,11 +22,11 @@ class TestZabbix(unittest.TestCase):
         # self.assertTrue(check_conn.run_check(config))
 
         endep = 1740787201
-        itemIds = [216657]
+        itemIds = [115629]
 
         trends_stats.update_stats(config, endep=1740848580, itemIds=itemIds, group_names=group_names, host_names=host_names, initialize=True, max_itemIds=max_itemIds)
 
-        data = detector.run(config, endep=1740801601 , itemIds=itemIds, group_names=group_names, max_itemIds=max_itemIds, trace_mode=True, initialize=True)
+        data = detector.run(config, endep=1740892561 , itemIds=itemIds, group_names=group_names, max_itemIds=max_itemIds, trace_mode=True, initialize=True)
         for data_source_name, df in data.items():
             if df is None:
                 continue

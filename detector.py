@@ -27,7 +27,7 @@ def run(config_file: str, endep: int = 0,
     config_loader.load_config(config_file)
     conf = config_loader.conf
 
-    log(f"starting with config: {conf}")
+    log(f"starting with config: {config_file}")
     
     if item_names is None:
         item_names = conf.get('item_names', [])
@@ -55,8 +55,8 @@ def run(config_file: str, endep: int = 0,
     # data processing
     clusters = {}
     for data_source in data_sources:
-        log(f"processing data source: {data_source}")
         data_source_name = data_source["name"]
+        log(f"processing data source: {data_source_name}")
         ms = ModelsSet(data_source_name)
         dg = data_getter.get_data_getter(data_source)
 
@@ -114,7 +114,7 @@ def run(config_file: str, endep: int = 0,
         log(f"base_clocks: count={len(base_clocks)} start={base_clocks[0]} end={base_clocks[-1]}")
         
         # detect anomaly
-        log(f"detector.detect({data_source}, {t_startep}, {h_startep1}, {h_startep2}, {endep}, {base_clocks}, {itemIds}, {group_names}, {skip_history_update})")
+        log(f"detector.detect({data_source_name}, {t_startep}, {h_startep1}, {h_startep2}, {endep}, base_clocks, itemIds, {group_names}, {skip_history_update})")
         data = detector.detect(data_source, 
            t_startep, h_startep1, h_startep2, endep,
            base_clocks,
@@ -175,4 +175,5 @@ if __name__ == "__main__":
             print(data_source_name)
             print(df)
 
+    log("done")
     

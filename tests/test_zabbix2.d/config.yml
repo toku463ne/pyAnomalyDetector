@@ -67,6 +67,9 @@ data_sources:
           operator: '>'
           value: 5
       
+logging:
+  level: INFO
+  log_path: /tmp/anomdec-test_zabbix2.log
 
 view_sources:
   - name: "test_zabbix2"

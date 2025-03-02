@@ -5,6 +5,12 @@ admdb:
   dbname: anomdec
   port: 5432
 
+logging:
+  level: INFO
+  log_file: /tmp/anomdec-test_zabbix.log
+
+
+
 data_sources:
   - name: "test_zabbix"
     type: "zabbix"
@@ -46,6 +52,11 @@ data_sources:
         value: #value > 3
           operator: '>'
           value: 3
+      - name: ignore small changes in the pused
+        item: "key_ LIKE '%.pused%' AND units = '%'"
+        value: #value > 3
+          operator: '>'
+          value: 3    
       - name: ignore small changes in the web.test.time
         item: "key_ LIKE 'web.test.time[%]' AND units = 's'"
         value: #value > 1

@@ -1,5 +1,6 @@
 import time
 from typing import List, Dict, Tuple
+import logging
 
 import utils.config_loader as config_loader
 from models.models_set import ModelsSet
@@ -8,6 +9,10 @@ from data_processing.history_stats import HistoryStats
 import data_getter
 import utils.normalizer as normalizer
 
+
+def log(msg, level=logging.INFO):
+    msg = f"[detector.py] {msg}"
+    logging.log(level, msg)
 
 def run(config_file: str, endep: int = 0, 
         item_names: List[str] = None, 
@@ -21,6 +26,8 @@ def run(config_file: str, endep: int = 0,
         ) -> Tuple[Dict, Dict, Dict]:
     config_loader.load_config(config_file)
     conf = config_loader.conf
+
+    log(f"starting with config: {conf}")
     
     if item_names is None:
         item_names = conf.get('item_names', [])
@@ -48,6 +55,7 @@ def run(config_file: str, endep: int = 0,
     # data processing
     clusters = {}
     for data_source in data_sources:
+        log(f"processing data source: {data_source}")
         data_source_name = data_source["name"]
         ms = ModelsSet(data_source_name)
         dg = data_getter.get_data_getter(data_source)
@@ -89,6 +97,7 @@ def run(config_file: str, endep: int = 0,
                           max_itemIds=max_itemIds)
         if skip_history_update == False:
             #ms.history.truncate()
+            log(f"hs.update_stats({h_startep1}, {diff_startep}, {endep}, {oldstartep})")
             hs.update_stats(h_startep1, diff_startep, endep, oldstartep)
 
             # update history
@@ -102,9 +111,10 @@ def run(config_file: str, endep: int = 0,
             #    history.update_history(data_source, nonexisting, h_startep1, endep)
 
         base_clocks = normalizer.get_base_clocks(h_startep1, endep-1, history_interval)
-
-
+        log(f"base_clocks: count={len(base_clocks)} start={base_clocks[0]} end={base_clocks[-1]}")
+        
         # detect anomaly
+        log(f"detector.detect({data_source}, {t_startep}, {h_startep1}, {h_startep2}, {endep}, {base_clocks}, {itemIds}, {group_names}, {skip_history_update})")
         data = detector.detect(data_source, 
            t_startep, h_startep1, h_startep2, endep,
            base_clocks,
@@ -112,6 +122,7 @@ def run(config_file: str, endep: int = 0,
            skip_history_update,
            trace_mode=trace_mode)
         clusters[data_source_name] = data
+        
 
         # update history updates
         if skip_history_update == False:
@@ -136,6 +147,10 @@ if __name__ == "__main__":
     parser.add_argument('--skip-history-update', action='store_true', help='skip to update local history')
     parser.add_argument('--trace', action='store_true', help='trace mode')
     
+
+    # suppress python warnings
+    import warnings
+    warnings.filterwarnings("ignore")
 
     args = parser.parse_args()
     config_file = args.config

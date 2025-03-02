@@ -1,11 +1,14 @@
 from typing import List
 import time
+import logging
 
 import utils.config_loader as config_loader
 from data_processing.trends_stats import TrendsStats
 from models.models_set import ModelsSet
 
-
+def log(msg, level=logging.INFO):
+    msg = f"[trends_stats.py] {msg}"
+    logging.log(level, msg)
 
 def update_stats(config_file: str, 
                 endep: int, diff_startep: int =0, 
@@ -18,6 +21,8 @@ def update_stats(config_file: str,
     conf = config_loader.conf
     data_sources = conf['data_sources']
 
+    log(f"starting with config: {conf}")
+
     if endep == 0:
         endep = int(time.time())
     
@@ -26,6 +31,7 @@ def update_stats(config_file: str,
 
     # update stats
     for data_source in data_sources:
+        log(f"processing data source: {data_source}")
         data_source_name = data_source["name"] 
         oldstartep: int = 0
         startep: int = 0
@@ -53,9 +59,12 @@ def update_stats(config_file: str,
         startep = endep - trends_interval * trends_retention
         if diff_startep == 0:
             diff_startep = startep
+        log(f"ts.update_stats({startep}, {diff_startep}, {endep}, {oldstartep})")
         ts.update_stats(startep, diff_startep, endep, oldstartep)
 
         ms.trends_updates.upsert_updates(startep, endep)
+
+    log("done")
 
 
 if __name__ == "__main__":
@@ -65,5 +74,9 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
     parser.add_argument('--init', action='store_true', help='If clear DB first')
     args = parser.parse_args()
+
+    # suppress python warnings
+    import warnings
+    warnings.filterwarnings("ignore")
 
     update_stats(args.config, 0, initialize=args.init)

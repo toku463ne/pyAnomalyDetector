@@ -60,6 +60,12 @@ def load_config(config_path=None, additional_context={}):
             level=getattr(logging, l.get("level", "INFO").upper(), logging.INFO),
             format=l.get("format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         )
+    else:
+        # log to stdout
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s %(message)s"
+        )
 
 
 

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Tuple
+import logging
 
 import utils.config_loader as config_loader
 import data_getter
@@ -8,6 +9,10 @@ from models.models_set import ModelsSet
 import utils.kmeans as kmeans
 import utils.normalizer as normalizer
 
+
+def log(msg, level=logging.INFO):
+    msg = f"[data_processing/detector.py] {msg}"
+    logging.log(level, msg)
 
 class Detector:
     def __init__(self, data_source: Dict, trace_mode=False):
@@ -42,8 +47,8 @@ class Detector:
         self._print_item_trace(title, itemIds)
 
     def _print_item_trace(self, title: str, itemIds: List[int]):
-        print(f"{title}: {len(itemIds)}")
-        print(itemIds)
+        log(f"{title}: {len(itemIds)}")
+        log(itemIds)
 
     def _detect_diff_anomalies(self, itemIds: List[int], 
                             trends_df: pd.DataFrame, recent_stats: pd.DataFrame, 
@@ -123,17 +128,17 @@ class Detector:
 
 
     def _detect1_batch(self,  
-        itemIds: List[int], lambda1_threshold: float
+        itemIds: List[int], 
+        t_stats: pd.DataFrame,
+        lambda1_threshold: float
     ) -> List[int]:
         ms = self.ms
-        dg = self.dg
-        item_conds = self.item_conds
         trends_min_count = self.trends_min_count
         ignore_diff_rate = self.ignore_diff_rate
         means = ms.history_stats.read_stats(itemIds)[['itemid', 'mean']]
 
         # get stats
-        t_stats = ms.trends_stats.read_stats(itemIds)[['itemid', 'mean', 'std', 'cnt']]
+        #t_stats = ms.trends_stats.read_stats(itemIds)[['itemid', 'mean', 'std', 'cnt']]
         t_stats = t_stats[t_stats['cnt'] > trends_min_count]
 
         # merge stats
@@ -154,7 +159,6 @@ class Detector:
         itemIds = h_stats_df['itemid'].tolist()
 
         return itemIds
-
 
 
     def _filter_by_anomaly_cnt(self, stats_df: pd.DataFrame, 
@@ -453,7 +457,37 @@ class Detector:
         clusters, _ = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
         return clusters
 
+    # filter by cond
+    def _filter_by_cond(self, itemIds: List[int]) -> List[int]:
+        ms = self.ms
+        dg = self.dg
+        means = ms.history_stats.read_stats(itemIds)[['itemid', 'mean']]
+        item_conds = self.item_conds
+        # filter by item_conds
+        if len(item_conds) > 0 and len(itemIds) > 0:
+            for itemId in itemIds:
+                for cond in item_conds:
+                    """
+                    conf format:
+                        name: ignore traffic lower than 8Mbps
+                        item: key_ LIKE 'net.if.%.[%]' AND units = 'bps' 
+                        value: #'value > 8000000'
+                        operator: '>'
+                        value: 8000000
+                    """
+                    if dg.check_itemId_cond(itemId, cond["item"]):
+                        value = means[means['itemid'] == itemId].iloc[0]['mean']
+                        if not self._evaluate_cond(value, cond):
+                            itemIds.remove(itemId)
+                            break
+
+        if self.trace_mode:
+            self._print_item_trace("filter by item_conds", itemIds)
         
+        return itemIds
+                        
+
+
 
     def detect(self,  
             t_startep: int, startep1: int, startep2: int, endep: int,
@@ -474,35 +508,52 @@ class Detector:
 
         for i in range(0, len(itemIds), batch_size):
             batch_itemIds = itemIds[i:i+batch_size]
+
+            t_stats = ms.trends_stats.read_stats(itemIds)[['itemid', 'mean', 'std', 'cnt']]
             # first detection
-            batch_anomaly_itemIds = self._detect1_batch(batch_itemIds, lambda1_threshold)
+            log(f"detector.detect1_batch(batch_itemIds, {lambda1_threshold}) (1st time)")
+            batch_anomaly_itemIds = self._detect1_batch(batch_itemIds, t_stats, lambda1_threshold)
             if len(batch_anomaly_itemIds) == 0:
                 continue
             anomaly_itemIds.extend(batch_anomaly_itemIds)        
 
         if self.trace_mode:
-            self._print_item_trace("detect1(trends filter) result:", batch_anomaly_itemIds)
+            self._print_item_trace("detect1(trends filter) result (1st time):", batch_anomaly_itemIds)
 
         if len(anomaly_itemIds) == 0:
             return None
         
         if not skip_history_update:
+            log(f"detector.update_history(anomaly_itemIds, {base_clocks}, {startep1})")
             self._update_history(anomaly_itemIds, base_clocks, startep1)
             ms.history.remove_itemIds_not_in(anomaly_itemIds)
         
         anomaly_itemIds2 = []
         for i in range(0, len(anomaly_itemIds), batch_size):
-            # get trends data
-            trends_df = dg.get_trends_full_data(startep=t_startep, endep=startep1, itemIds=itemIds)
-            if trends_df.empty:
-                return []
-
             # second detection
             batch_itemIds = anomaly_itemIds[i:i+batch_size]
+            
+            # get trends data
+            trends_df = dg.get_trends_full_data(startep=t_startep, endep=startep1, itemIds=batch_itemIds)
+            if trends_df.empty:
+                return []
+            
+            # calculate trends stats again as trends_df is newer than ms.trends_stats
+            trends_stats_df = trends_df.groupby('itemid')['value_avg'].agg(['mean', 'std', 'count']).reset_index()
+            trends_stats_df.columns = ['itemid', 'mean', 'std', 'cnt']
+            log(f"detector.detect1_batch(batch_itemIds, trends_stats_df, {lambda1_threshold}) (2nd time)")
+            batch_itemIds = self._detect1_batch(batch_itemIds, trends_stats_df, lambda1_threshold)
+            if len(batch_itemIds) == 0:
+                continue
+            if self.trace_mode:
+                self._print_item_trace("detect1(trends filter) result (2nd time):", batch_itemIds)
+
+
             history_df = ms.history.get_data(batch_itemIds)
             if history_df.empty:
                 continue
-                
+            
+            log(f"detector.detect2_batch(history_df, trends_df, batch_itemIds, {lambda2_threshold})")
             batch_anomaly_itemIds = self._detect2_batch(history_df, trends_df, batch_itemIds, lambda2_threshold)
             if len(batch_anomaly_itemIds) == 0:
                 continue
@@ -510,6 +561,7 @@ class Detector:
                 self._print_item_trace("detect2(diff filter by lambda2) result:", batch_anomaly_itemIds)
 
             # third detection
+            log(f"detector.detect3_batch(trends_df, base_clocks, batch_anomaly_itemIds, {startep2}, {lambda3_threshold}, {lambda4_threshold})")
             batch_anomaly_itemIds = self._detect3_batch(trends_df, base_clocks, batch_anomaly_itemIds, startep2, 
                                                 lambda3_threshold, lambda4_threshold)
             if self.trace_mode:
@@ -521,26 +573,6 @@ class Detector:
         if self.trace_mode:
             self._print_item_trace("detect2, detect3 result:", batch_anomaly_itemIds)
 
-        item_conds = self.item_conds
-        # filter by item_conds
-        if len(item_conds) > 0 and len(anomaly_itemIds2) > 0:
-            for itemId in anomaly_itemIds2:
-                for cond in item_conds:
-                    """
-                    conf format:
-                        name: ignore traffic lower than 8Mbps
-                        item: key_ LIKE 'net.if.%.[%]' AND units = 'bps' 
-                        value: #'value > 8000000'
-                        operator: '>'
-                        value: 8000000
-                    """
-                    if dg.check_itemId_cond(itemId, cond["item"]):
-                        value = means[means['itemid'] == itemId].iloc[0]['mean']
-                        if not self._evaluate_cond(value, cond):
-                            itemIds.remove(itemId)
-                            break
-                        
-
 
         host_itemIds = dg.get_item_host_dict(anomaly_itemIds2)
 
@@ -550,9 +582,14 @@ class Detector:
                 k = 2
 
             # classify anomaly_itemIds3 by kmeans
+            log(f"detector.classify_anomalies(anomaly_itemIds2)")
             clusters = self._classify_anomalies(anomaly_itemIds2)
                     
         groups_info = dg.classify_by_groups(anomaly_itemIds2, group_names)
+
+        # filter by item_conds
+        log(f"detector.filter_by_cond(anomaly_itemIds2)")
+        anomaly_itemIds2 = self._filter_by_cond(anomaly_itemIds2)
 
         # results in df with columns: itemId, hostId, host_name, item_name, clusterId, group_name
         target_itemIds = []
@@ -581,7 +618,10 @@ class Detector:
         # remove duplicates
         results = results.drop_duplicates(subset=['itemid', 'group_name', 'created'], keep='first')
         
+        # insert anomalies
+        log(f"detector.insert_data(results)")
         ms.anomalies.insert_data(results)
+        log(f"detector.delete_old_entries({endep - anomaly_keep_secs})")
         ms.anomalies.delete_old_entries(endep - anomaly_keep_secs)
         return results
 

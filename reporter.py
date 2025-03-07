@@ -56,3 +56,21 @@ def report(config_file: str, epoch: int) -> Dict:
                 data[data_source["name"]][clusterid][group_name][host_name].append(row["itemid"])
  
     return data
+
+if __name__ == "__main__":
+    # read arguments
+    import argparse
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('-c', '--config', type=str, help='config yaml file')
+    parser.add_argument('--end', type=int, default=0, help='End epoch.')
+
+    # suppress python warnings
+    import warnings
+    warnings.filterwarnings("ignore")
+
+    args = parser.parse_args()
+    
+    data = report(args.config, args.end)
+
+    import json
+    json.dumps(data, indent=4)

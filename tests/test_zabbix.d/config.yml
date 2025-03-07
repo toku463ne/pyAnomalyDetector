@@ -22,59 +22,61 @@ data_sources:
     retries: 3
     item_conds: 
       - name: ignore traffic lower than 8Mbps
-        item: key_ LIKE 'net.if.%.[%]' AND units = 'bps' 
-        value: #'value > 8000000'
+        filter: "key_ LIKE 'net.if.%.[%]' AND units = 'bps' "
+        condition: #'value > 8000000'
           operator: '>'
           value: 8000000
+      - name: ignore uptime
+        filter: "key_ LIKE 'vmware.vm.guest.osuptime%'"
     item_diff_conds:
       - name: ignore small changes in the CPU
-        item: key_ LIKE '%cpu.%' AND units = '%' 
-        value: #value > 8
+        filter: "key_ LIKE '%cpu.%' AND units = '%'"
+        condition: #value > 8
           operator: '>'
           value: 8
       - name: ignore small changes in the memory
-        item: "key_ LIKE '%mem.%' AND units = '%'"
-        value: #value > 8
+        filter: "key_ LIKE '%mem.%' AND units = '%'"
+        condition: #value > 8
           operator: '>'
           value: 8
       - name: ignore small changes in the disk
-        item: "key_ LIKE '%vfs.fs.size%' AND units = '%'"
-        value: #value > 3
+        filter: "key_ LIKE '%vfs.fs.size%' AND units = '%'"
+        condition: #value > 3
           operator: '>'
           value: 3
       - name: ignore small changes in the disk
-        item: "key_ LIKE '%vfs.fs.size%' AND units = 'B'"
-        value: #value > 1000000000
+        filter: "key_ LIKE '%vfs.fs.size%' AND units = 'B'"
+        condition: #value > 1000000000
           operator: '>'
           value: 1000000000
       - name: ignore small changes in the disk inode
-        item: "key_ LIKE '%vfs.fs.inode%' AND units = '%'"
-        value: #value > 3
+        filter: "key_ LIKE '%vfs.fs.inode%' AND units = '%'"
+        condition: #value > 3
           operator: '>'
           value: 3
       - name: ignore small changes in the pused
-        item: "key_ LIKE '%.pused%' AND units = '%'"
-        value: #value > 3
+        filter: "key_ LIKE '%.pused%' AND units = '%'"
+        condition: #value > 3
           operator: '>'
           value: 3    
       - name: ignore small changes in the web.test.time
-        item: "key_ LIKE 'web.test.time[%]' AND units = 's'"
-        value: #value > 1
+        filter: "key_ LIKE 'web.test.time[%]' AND units = 's'"
+        condition: #value > 1
           operator: '>'
           value: 1
       - name: ignore small changes in the network traffics
-        item: "key_ LIKE 'net.if.%.[%]' AND units = 'bps'"
-        value: #value > 1000000
+        filter: "key_ LIKE 'net.if.%[%]' AND units = 'bps'"
+        condition: #value > 1000000
           operator: '>'
           value: 1000000
       - name: ignore whole small percentage changes
-        item: "units = '%'"
-        value: #value > 3
+        filter: "units = '%'"
+        condition: #value > 3
           operator: '>'
           value: 3
       - name: ignore 5 degrees of tempuratures
-        item: "units = '°C'"
-        value:
+        filter: "units = '°C'"
+        condition:
           operator: '>'
           value: 5
       

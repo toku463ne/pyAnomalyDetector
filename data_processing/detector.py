@@ -115,14 +115,21 @@ class Detector:
         return itemIds
 
     def _evaluate_cond(self, value: float, cond: Dict) -> bool:
-        operator = cond["value"]["operator"]
-        threshold = cond["value"]["value"]
+        if "condition" not in cond.keys():
+            return False
+
+        operator = cond["condition"].get("operator", "")
+        threshold = cond["condition"].get("value", "")
         if operator == ">":
             return value > threshold
         elif operator == "<":
             return value < threshold
         elif operator == "=":
             return value == threshold
+        elif operator == ">=":
+            return value >= threshold
+        elif operator == "<=":
+            return value <= threshold
         return False
 
 
@@ -157,17 +164,20 @@ class Detector:
 
         # get itemIds
         itemIds = h_stats_df['itemid'].tolist()
+        itemIds = list(set(itemIds))
 
         dg = self.dg
 
         # filter by defined conds
-        log(f"detector.filter_by_cond(itemIds)")
+        #log(f"detector.filter_by_cond(itemIds)")
         item_conds = self.item_conds
         if len(item_conds) > 0 and len(itemIds) > 0:
             for cond in item_conds:
+                #if cond['filter'] == "key_ LIKE 'vmware.vm.guest.osuptime%'":
+                #    print("")
                 if len(itemIds) == 0:
                     break
-                itemIds2 = dg.check_itemId_cond(itemIds, cond["item"])
+                itemIds2 = dg.check_itemId_cond(itemIds, cond["filter"])
                 for itemId in itemIds2:    
                     value = means[means['itemid'] == itemId].iloc[0]['mean']
                     if self._evaluate_cond(value, cond) == False:
@@ -176,22 +186,25 @@ class Detector:
         if self.trace_mode:
             self._print_item_trace("filter by item_conds", itemIds)
 
+
         if len(itemIds) == 0:
             return []
 
         # filter by defined diff conds
         item_diff_conds = self.item_diff_conds
         h_stats_df['diff'] = abs(h_stats_df['mean_h'] - h_stats_df['mean_t'])
+
         if len(item_diff_conds) > 0 and len(itemIds) > 0:
             for cond in item_diff_conds:
                 if len(itemIds) == 0:
                     break
-                itemIds2 = dg.check_itemId_cond(itemIds, cond['item'])
+                itemIds2 = dg.check_itemId_cond(itemIds, cond['filter'])
                 for itemId in itemIds2:
+                    #if cond['filter'] == "key_ LIKE 'vmware.vm.guest.osuptime%'":
+                    #    print("")
                     value = h_stats_df[h_stats_df['itemid'] == itemId].iloc[0]['diff']
                     if self._evaluate_cond(value, cond) == False:
                         itemIds.remove(itemId)
-                        break
         
         if self.trace_mode:
             self._print_item_trace("filter by diff item_conds", itemIds)
@@ -563,6 +576,7 @@ class Detector:
             self._update_history(anomaly_itemIds, base_clocks, startep1)
             ms.history.remove_itemIds_not_in(anomaly_itemIds)
         
+        log("starting detect1(2nd time),detect2,detect3")
         anomaly_itemIds2 = []
         for i in range(0, len(anomaly_itemIds), batch_size):
             # second detection
@@ -576,7 +590,7 @@ class Detector:
             # calculate trends stats again as trends_df is newer than ms.trends_stats
             trends_stats_df = trends_df.groupby('itemid')['value_avg'].agg(['mean', 'std', 'count']).reset_index()
             trends_stats_df.columns = ['itemid', 'mean', 'std', 'cnt']
-            log(f"detector.detect1_batch(batch_itemIds, trends_stats_df, {lambda1_threshold}) (2nd time)")
+            #log(f"detector.detect1_batch(batch_itemIds, trends_stats_df, {lambda1_threshold}) (2nd time)")
             batch_itemIds = self._detect1_batch(batch_itemIds, trends_stats_df, lambda1_threshold)
             if len(batch_itemIds) == 0:
                 continue
@@ -588,7 +602,7 @@ class Detector:
             if history_df.empty:
                 continue
             
-            log(f"detector.detect2_batch(history_df, trends_df, batch_itemIds, {lambda2_threshold})")
+            #log(f"detector.detect2_batch(history_df, trends_df, batch_itemIds, {lambda2_threshold})")
             batch_anomaly_itemIds = self._detect2_batch(history_df, trends_df, batch_itemIds, lambda2_threshold)
             if len(batch_anomaly_itemIds) == 0:
                 continue
@@ -596,7 +610,7 @@ class Detector:
                 self._print_item_trace("detect2(diff filter by lambda2) result:", batch_anomaly_itemIds)
 
             # third detection
-            log(f"detector.detect3_batch(trends_df, base_clocks, batch_anomaly_itemIds, {startep2}, {lambda3_threshold}, {lambda4_threshold})")
+            #log(f"detector.detect3_batch(trends_df, base_clocks, batch_anomaly_itemIds, {startep2}, {lambda3_threshold}, {lambda4_threshold})")
             batch_anomaly_itemIds = self._detect3_batch(trends_df, base_clocks, batch_anomaly_itemIds, startep2, 
                                                 lambda3_threshold, lambda4_threshold)
             if self.trace_mode:
@@ -607,6 +621,8 @@ class Detector:
 
         if self.trace_mode:
             self._print_item_trace("detect2, detect3 result:", batch_anomaly_itemIds)
+
+        log("Completed")
 
         if len(anomaly_itemIds2) == 0:
             return None

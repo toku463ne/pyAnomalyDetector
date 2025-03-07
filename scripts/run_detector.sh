@@ -7,3 +7,8 @@ end=$(expr $end - 300)
 echo "$(date) python3 detector.py --end $end $@"
 date;time python3 detector.py --end $end $@ 
 echo completed
+
+python3 reporter.py --end $end $@ > /tmp/anomdec_report.json
+
+
+

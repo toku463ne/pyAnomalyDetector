@@ -274,7 +274,7 @@ class ZabbixGetter(DataGetter):
     # check if the itemid meets the condition
     def check_itemId_cond(self, itemIds: List[int], item_cond: str) -> bool:
         if item_cond == "":
-            return True
+            return itemIds
         sql = f"""
             SELECT itemid
             FROM items

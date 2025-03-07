@@ -22,7 +22,7 @@ class TestReporter(unittest.TestCase):
         groupNames = ["group1", "group1", "group3", "group3"]
         itemNames = ["item1", "item2", "item3", "item4"]
 
-        df = pd.DataFrame(columns=["itemid", "created", "group_name", "hostid", "clusterid", "host_name", "item_name"])
+        df = pd.DataFrame(columns=["itemid", "created", "group_name", "hostid", "clusterid", "host_name", "item_name"], dtype=object)
         for epoch in epochs:
             created = [epoch]*4
             df = pd.concat([df, pd.DataFrame({

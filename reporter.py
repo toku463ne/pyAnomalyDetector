@@ -51,7 +51,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
     parser.add_argument('--end', type=int, default=0, help='End epoch.')
-    parser.add_argument('--out', type=str, default="", help='Output file.')
+    parser.add_argument('--output', type=str, default="", help='Output file.')
 
     # suppress python warnings
     import warnings
@@ -62,8 +62,8 @@ if __name__ == "__main__":
     data = report(args.config, args.end)
 
     import json
-    if args.out:
-        with open(args.out, "w") as f:
+    if args.output:
+        with open(args.output, "w") as f:
             f.write(json.dumps(data, indent=4))
     else:
         print(json.dumps(data, indent=4))

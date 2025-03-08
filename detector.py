@@ -165,7 +165,6 @@ if __name__ == "__main__":
     clusters = run(config_file, endep, items, hosts, groups, itemIds, initialize=args.init, skip_history_update=args.skip_history_update, trace_mode=trace_mode)
 
     # pretty print json clusters
-    import json
     if output != "":
         for data_source_name, df in clusters.items():
             if df:
@@ -174,6 +173,10 @@ if __name__ == "__main__":
         for data_source_name, df in clusters.items():
             print(data_source_name)
             print(df)
+
+    # run reporter
+    import reporter
+    reporter.run(config_file, endep, clusters, output)
 
     log("done")
     

@@ -54,8 +54,6 @@ class Detector:
                             trends_df: pd.DataFrame, recent_stats: pd.DataFrame, 
                             lamnda_threshold: float,
                             is_up=True) -> List[int]:
-        dg = self.dg
-        item_diff_conds = self.item_diff_conds
         ignore_diff_rate = self.ignore_diff_rate
         if is_up:
             trends_df2 = trends_df[['itemid', 'clock', 'value_max']]
@@ -103,15 +101,6 @@ class Detector:
         # get itemIds
         itemIds = stats_df['itemid'].tolist()
 
-        # filter by defined conditions
-        #if len(item_diff_conds) > 0 and len(itemIds) > 0:
-        #    for cond in item_diff_conds:
-        #        itemIds2 = dg.check_itemId_cond(itemIds, cond['item'])
-        #        for itemId in itemIds2:
-        #            value = stats_df[stats_df['itemid'] == itemId].iloc[0]['diff']
-        #            if self._evaluate_cond(value, cond) == False:
-        #                itemIds.remove(itemId)
-        #                break
         return itemIds
 
     def _evaluate_cond(self, value: float, cond: Dict) -> bool:

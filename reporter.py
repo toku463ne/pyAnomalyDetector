@@ -31,18 +31,6 @@ def report(config_file: str, epoch: int) -> Dict:
         # filter df by clusterids
         df = df[df["clusterid"].isin(clusterids)]
 
-        """
-        create json in the following format having filtered_itemIds
-        {
-          '<clusterid>': {
-            '<group_name>': {
-              '<host_name>': [
-                <item_id>, ...
-              ]
-            }
-          }
-        }    
-        """
         data[data_source["name"]] = {}
         for clusterid in clusterids:
             data[data_source["name"]][clusterid] = {}
@@ -63,6 +51,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
     parser.add_argument('--end', type=int, default=0, help='End epoch.')
+    parser.add_argument('--out', type=str, default="", help='Output file.')
 
     # suppress python warnings
     import warnings
@@ -73,4 +62,9 @@ if __name__ == "__main__":
     data = report(args.config, args.end)
 
     import json
-    json.dumps(data, indent=4)
+    if args.out:
+        with open(args.out, "w") as f:
+            f.write(json.dumps(data, indent=4))
+    else:
+        print(json.dumps(data, indent=4))
+    

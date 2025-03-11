@@ -27,7 +27,9 @@ data_sources:
           operator: '>'
           value: 8000000
       - name: ignore uptime
-        filter: "key_ LIKE 'vmware.vm.guest.osuptime%'"
+        filter: "key_ LIKE '%uptime%'"
+      - name: ignore localtime
+        filter: "key_ = 'system.localtime'"
     item_diff_conds:
       - name: ignore small changes in the CPU
         filter: "key_ LIKE '%cpu.%' AND units = '%'"

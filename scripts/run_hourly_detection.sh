@@ -11,12 +11,12 @@ export SECRET_PATH="$HOME/.creds/zabbix_api.yaml"
 end=$(date +"%s")
 end=$(expr $end - 300)
 echo "$(date) python3 detector.py -c $config_path --end $end"
-date;time nice python3 detector.py -c $config_path  --end $end
+date;time nice python3 detector.py -c $config_path --end $end
 
-echo "$(date) python3 report.py -c $config_path --end $end --output $report_path"
-date;time nice python3 report.py -c $config_path --end $end --output $report_path
+echo "$(date) python3 reporter.py -c $config_path --end $end --output $report_path"
+date;time nice python3 reporter.py -c $config_path --end $end --output $report_path
 
 echo "$(date) python3 viewer.py -c $config_path"
-date;time nice python3 python3 viewer.py -c $config_path
+date;time nice python3 viewer.py -c $config_path
 
 echo completed

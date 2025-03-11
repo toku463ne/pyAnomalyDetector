@@ -145,11 +145,16 @@ class Detector:
         if self.trace_mode:
             self._print_trace("detect1: filter by lamda1", h_stats_df)
 
+        if len(h_stats_df) == 0:
+            return []
+
         # ignore small diffs
         h_stats_df = h_stats_df[h_stats_df['mean_t'] > 0 & (abs(h_stats_df['mean_h'] - h_stats_df['mean_t'])/h_stats_df['mean_t'] > ignore_diff_rate)]
         if self.trace_mode:
             self._print_trace("detect1: filter by ignore_diff_rate", h_stats_df)
 
+        if len(h_stats_df) == 0:
+            return []
 
         # get itemIds
         itemIds = h_stats_df['itemid'].tolist()
@@ -484,8 +489,9 @@ class Detector:
             #charts[itemId] = history_df[history_df['itemid'] == itemId]['value'].reset_index(drop=True)
             clocks = history_df[history_df['itemid'] == itemId]['clock'].tolist()
             values = history_df[history_df['itemid'] == itemId]['value'].tolist()
-            values = normalizer.fit_to_base_clocks(base_clocks, clocks, values)
-            charts[itemId] = pd.Series(data=values)
+            if len(values) > 0:
+                values = normalizer.fit_to_base_clocks(base_clocks, clocks, values)
+                charts[itemId] = pd.Series(data=values)
 
         if len(charts) < 2:
             return {}
@@ -544,6 +550,8 @@ class Detector:
         lambda4_threshold = self.lambda4_threshold
         k = self.k
 
+        log(f"First count: {len(itemIds)}")
+
         log(f"detector.detect1_batch(batch_itemIds, {lambda1_threshold}) (1st time)")
         for i in range(0, len(itemIds), batch_size):
             batch_itemIds = itemIds[i:i+batch_size]
@@ -557,13 +565,19 @@ class Detector:
         if self.trace_mode:
             self._print_item_trace("detect1(trends filter) result (1st time):", batch_anomaly_itemIds)
 
+        log(f"After detector.detect1_batch count: {len(anomaly_itemIds)}")
+
         if len(anomaly_itemIds) == 0:
             return None
         
         if not skip_history_update:
             log(f"detector.update_history(anomaly_itemIds, base_clocks, {startep1})")
-            self._update_history(anomaly_itemIds, base_clocks, startep1)
-            ms.history.remove_itemIds_not_in(anomaly_itemIds)
+            itemIds_to_renew = ms.anomalies.get_itemids()
+            itemIds_to_renew.extend(anomaly_itemIds)
+            itemIds_to_renew = list(set(itemIds_to_renew))
+
+            self._update_history(itemIds_to_renew, base_clocks, startep1)
+            ms.history.remove_itemIds_not_in(itemIds_to_renew)
         
         log("starting detect1(2nd time),detect2,detect3")
         anomaly_itemIds2 = []
@@ -590,6 +604,8 @@ class Detector:
             history_df = ms.history.get_data(batch_itemIds)
             if history_df.empty:
                 continue
+
+            trends_df = trends_df[trends_df["itemid"].isin(batch_itemIds)]
             
             #log(f"detector.detect2_batch(history_df, trends_df, batch_itemIds, {lambda2_threshold})")
             batch_anomaly_itemIds = self._detect2_batch(history_df, trends_df, batch_itemIds, lambda2_threshold)
@@ -597,6 +613,8 @@ class Detector:
                 continue
             if self.trace_mode:
                 self._print_item_trace("detect2(diff filter by lambda2) result:", batch_anomaly_itemIds)
+
+            trends_df = trends_df[trends_df["itemid"].isin(batch_anomaly_itemIds)]
 
             # third detection
             #log(f"detector.detect3_batch(trends_df, base_clocks, batch_anomaly_itemIds, {startep2}, {lambda3_threshold}, {lambda4_threshold})")
@@ -609,9 +627,9 @@ class Detector:
             anomaly_itemIds2.extend(batch_anomaly_itemIds)
 
         if self.trace_mode:
-            self._print_item_trace("detect2, detect3 result:", batch_anomaly_itemIds)
+            self._print_item_trace("detect2, detect3 result:", anomaly_itemIds2)
 
-        log("Completed")
+        log(f"final count: {len(anomaly_itemIds2)}")
 
         if len(anomaly_itemIds2) == 0:
             return None
@@ -623,12 +641,16 @@ class Detector:
             if len(anomaly_itemIds2) < k:
                 k = 2
 
+            # get anomalies in the db
+            all_anomaly_itemIds = ms.anomalies.get_itemids()
+            all_anomaly_itemIds.extend(anomaly_itemIds2)
+            all_anomaly_itemIds = list(set(all_anomaly_itemIds))
+
             # classify anomaly_itemIds3 by kmeans
             log(f"detector.classify_anomalies(anomaly_itemIds2)")
-            clusters = self._classify_anomalies(anomaly_itemIds2)
+            clusters = self._classify_anomalies(all_anomaly_itemIds)
                     
         groups_info = dg.classify_by_groups(anomaly_itemIds2, group_names)
-
         if len(anomaly_itemIds2) == 0:
             return None
 
@@ -657,11 +679,12 @@ class Detector:
                                 'host_name': host_names, 'item_name': item_names})
         
         # remove duplicates
-        results = results.drop_duplicates(subset=['itemid', 'group_name', 'created'], keep='first')
+        results = results.drop_duplicates(subset=['itemid', 'group_name', 'clusterid'], keep='first')
         
         # insert anomalies
         log(f"detector.insert_data(results)")
         ms.anomalies.insert_data(results)
+        ms.anomalies.update_clusterid(clusters)
         log(f"detector.delete_old_entries({endep - anomaly_keep_secs})")
         ms.anomalies.delete_old_entries(endep - anomaly_keep_secs)
         return results

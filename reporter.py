@@ -60,6 +60,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     data = report(args.config, args.end)
+    
+    if len(data) > 0:
+        data["has_anomalies"] = "yes"
+    else:
+        data["has_anomalies"] = "no"
 
     import json
     if args.output:

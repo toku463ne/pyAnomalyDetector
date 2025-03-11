@@ -23,10 +23,12 @@ class TestZabbix(unittest.TestCase):
 
         #stats.update_stats(config, endep=0, group_names=group_names, host_names=host_names, initialize=True, max_itemIds=max_itemIds)
 
-        itemIds = [97780]
+        itemIds = [215420, 220327, 268417, 345846]
 
 
-        data = detector.run(config, endep=1740787201 , itemIds=itemIds, group_names=group_names, max_itemIds=max_itemIds, skip_history_update=True, trace_mode=True)
+        data = detector.run(config, endep=1741563078 , itemIds=itemIds, 
+        group_names=group_names, max_itemIds=max_itemIds, 
+        skip_history_update=True, trace_mode=True, initialize=True)
         for data_source_name, df in data.items():
             if df is None:
                 continue

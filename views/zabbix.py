@@ -16,10 +16,14 @@ class ZabbixDashboard(View):
 
     # show dashboard
     def show(self, data: pd.DataFrame):
+        if len(data) == 0:
+            return
         # get min(itemid) for each group_name, hostid
-        data = data.groupby(["group_name", "hostid"]).agg({"itemid": "min"}).reset_index()
-        data.columns = ["group_name", "hostid", "itemid"]
+        data = data.groupby(["group_name", "hostid", "clusterid"]).agg({"itemid": "min"}).reset_index()
+        data = data.sort_values(by=["group_name", "hostid"])
         data = data[["group_name", "itemid"]]
+        data = data.drop_duplicates(subset=["group_name", "itemid"])
+
 
         pagedata = {}
         for _, row in data.iterrows():

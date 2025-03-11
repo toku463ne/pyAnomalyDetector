@@ -100,15 +100,6 @@ def run(config_file: str, endep: int = 0,
             log(f"hs.update_stats({h_startep1}, {diff_startep}, {endep}, {oldstartep})")
             hs.update_stats(h_startep1, diff_startep, endep, oldstartep)
 
-            # update history
-            #if len(existing) > 0:
-            #    #base_clocks_diff = normalizer.get_base_clocks(diff_startep, endep, history_interval)
-            #    #history.update_history(data_source, existing, base_clocks_diff, h_startep1)
-            #    history.update_history(data_source, existing, diff_startep, endep)
-            #if len(nonexisting) > 0:
-            #    #base_clocks_full = normalizer.get_base_clocks(h_startep1, endep, history_interval)
-            #    #history.update_history(data_source, nonexisting, base_clocks_full, h_startep1)
-            #    history.update_history(data_source, nonexisting, h_startep1, endep)
 
         base_clocks = normalizer.get_base_clocks(h_startep1, endep-1, history_interval)
         log(f"base_clocks: count={len(base_clocks)} start={base_clocks[0]} end={base_clocks[-1]}")
@@ -174,9 +165,7 @@ if __name__ == "__main__":
             print(data_source_name)
             print(df)
 
-    # run reporter
-    import reporter
-    reporter.run(config_file, endep, clusters, output)
+
 
     log("done")
     

@@ -9,7 +9,7 @@ logging:
   level: INFO
   log_file: /tmp/anomdec-test_zabbix.log
 
-
+centroid_dir: /tmp/anomdec/centroids
 
 data_sources:
   - name: "test_zabbix"

@@ -3,6 +3,7 @@ import numpy as np
 from typing import Dict, List, Tuple
 import logging
 
+import utils
 import utils.config_loader as config_loader
 import data_getter
 from models.models_set import ModelsSet
@@ -40,6 +41,9 @@ class Detector:
         self.n_rounds = self.kconf.get("n_rounds", 10)
         self.item_conds = data_source.get("item_conds", [])
         self.item_diff_conds = data_source.get("item_diff_conds", [])
+        self.centroid_dir = self.conf.get('centroid_dir', '')
+        if self.centroid_dir != '':
+            utils.ensure_dir(self.centroid_dir)
 
     def _print_trace(self, title: str, df: pd.DataFrame):
         itemIds = df['itemid'].tolist()
@@ -458,7 +462,7 @@ class Detector:
             
 
 
-    def _classify_anomalies(self, itemIds: List[int]) -> Dict[int, List[int]]:
+    def _classify_anomalies(self, itemIds: List[int], endep=0) -> Dict[int, List[int]]:
         ms = self.ms
         k = self.k
         if len(itemIds) < 2:    
@@ -500,7 +504,9 @@ class Detector:
             k = 2
 
         # run kmeans
-        clusters, _ = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
+        clusters, centroids = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
+        if self.centroid_dir != "":
+            kmeans.save_centroids(centroids, filename=f"{self.centroid_dir}/{endep}.json.gz")
         return clusters
 
     # filter by cond
@@ -648,7 +654,7 @@ class Detector:
 
             # classify anomaly_itemIds3 by kmeans
             log(f"detector.classify_anomalies(anomaly_itemIds2)")
-            clusters = self._classify_anomalies(all_anomaly_itemIds)
+            clusters = self._classify_anomalies(all_anomaly_itemIds, endep)
                     
         groups_info = dg.classify_by_groups(anomaly_itemIds2, group_names)
         if len(anomaly_itemIds2) == 0:

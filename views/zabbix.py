@@ -24,7 +24,6 @@ class ZabbixDashboard(View):
         data = data[["group_name", "itemid"]]
         data = data.drop_duplicates(subset=["group_name", "itemid"])
 
-
         pagedata = {}
         for _, row in data.iterrows():
             group_name = row["group_name"]
@@ -34,6 +33,43 @@ class ZabbixDashboard(View):
             pagedata[group_name].append(itemid)
         
         self.create_dashboard(self.dashboard_name, pagedata)
+
+    def show_latest(self, data: pd.DataFrame):
+        if len(data) == 0:
+            return
+        last_ep = data["created"].max()
+        data = data[data["created"] == last_ep]
+        data = data.sort_values(by=["clusterid", "hostid", "itemid"])
+        data = data[data["clusterid"] != 1]
+        
+        pagedata = {}
+        for _, row in data.iterrows():
+            clusterid = row["clusterid"]
+            if clusterid not in pagedata:
+                pagedata[clusterid] = []
+            pagedata[clusterid].append(row["itemid"])
+        
+        dashboard_name = f"{self.dashboard_name}_latest"
+        self.create_dashboard(dashboard_name, pagedata)
+
+    def show_by_cluster(self, data: pd.DataFrame):
+        if len(data) == 0:
+            return
+
+        data = data.sort_values(by=["clusterid", "hostid", "itemid"])
+        data = data.drop_duplicates(subset=["clusterid", "hostid", "itemid"])
+        data = data[data.groupby("clusterid")["clusterid"].transform("count") > 1]
+        
+        pagedata = {}
+        for _, row in data.iterrows():
+            clusterid = row["clusterid"]
+            if clusterid not in pagedata:
+                pagedata[clusterid] = []
+            pagedata[clusterid].append(row["itemid"])
+        
+        dashboard_name = f"{self.dashboard_name}_bycluster"
+        self.create_dashboard(dashboard_name, pagedata)
+
             
     def check_conn(self):
         version = self.zapi.api_version()

@@ -5,6 +5,9 @@ import logging
 
 SECRET_PATH = 'SECRET_PATH'
 LOG_DIR = 'LOG_DIR'
+VIEW_ALL = 'all'
+VIEW_LATEST = 'latest'
+VIEW_BYCLUSER = 'bycluster'
 
 BASE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..")
 SQL_DIR = os.path.join(BASE_DIR, "db/sql")

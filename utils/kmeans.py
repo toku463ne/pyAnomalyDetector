@@ -1,8 +1,15 @@
 import random
 import numpy as np
 import pandas as pd
+import gzip
+import json
 from collections import OrderedDict as ordered_dict
 from typing import Dict, List, Tuple
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.spatial.distance import pdist, squareform
+from sklearn.decomposition import PCA
 
 def calculate_distance(chart1: pd.Series, chart2: pd.Series) -> float:
     """
@@ -196,6 +203,23 @@ def process_clusters(charts: Dict[int, pd.Series], clusters: Dict[int, int]) -> 
     ordered_charts = ordered_dict(sorted(ordered_charts.items(), key=lambda x: len(x[1]), reverse=True))
     return ordered_charts, chart_ids
 
+
+def save_centroids(centroids, filename="centroids.json.gz"):
+    """
+    Saves centroids to a compressed JSON file.
+    """
+    centroids_dict = {key: value.tolist() for key, value in centroids.items()}
+    with gzip.open(filename, 'wt', encoding='utf-8') as f:
+        json.dump(centroids_dict, f)
+
+def load_centroids(filename="centroids.json.gz"):
+    """
+    Loads centroids from a compressed JSON file.
+    """
+    with gzip.open(filename, 'rt', encoding='utf-8') as f:
+        centroids_dict = json.load(f)
+    return {int(key): pd.Series(value) for key, value in centroids_dict.items()}
+
 def load_csv_metrics(csv_path: str, base_clocks: List[int]) -> Dict[int, pd.Series]:
     """
     Load metrics data from a CSV file.
@@ -262,3 +286,55 @@ def plot_clusters(charts: Dict[int, pd.Series], clusters: Dict[int, int]):
         ax.set_ylabel('Value')
         ax.legend()
         plt.show()
+
+def plot_heatmap(centroids):
+    """
+    Plots a heatmap of the pairwise Euclidean distances between cluster centroids.
+    
+    Parameters:
+        centroids (dict): Dictionary of clusterId to pd.Series representing centroids.
+    """
+    k = len(centroids)  # Number of clusters
+    
+    # Convert centroids to NumPy array
+    centroid_values = np.vstack([centroids[i].values for i in range(k)])
+    
+    # Compute pairwise distances between centroids
+    distance_matrix = squareform(pdist(centroid_values, metric='euclidean'))
+    
+    # Convert to DataFrame for visualization
+    distance_df = pd.DataFrame(distance_matrix, index=[f'Cluster {i}' for i in range(k)],
+                               columns=[f'Cluster {i}' for i in range(k)])
+    
+    # Plot heatmap
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(distance_df, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
+    plt.title("Cluster Distance Heatmap")
+    plt.show()
+
+def plot_pca(centroids):
+    """
+    Plots a PCA projection of the cluster centroids in 2D.
+    
+    Parameters:
+        centroids (dict): Dictionary of clusterId to pd.Series representing centroids.
+    """
+    k = len(centroids)  # Number of clusters
+    
+    # Convert centroids to NumPy array
+    centroid_values = np.vstack([centroids[i].values for i in range(k)])
+    
+    # PCA Projection to 2D
+    pca = PCA(n_components=2)
+    centroids_pca = pca.fit_transform(centroid_values)
+    
+    # Plot PCA results
+    plt.figure(figsize=(6, 5))
+    plt.scatter(centroids_pca[:, 0], centroids_pca[:, 1], c=range(k), cmap='viridis', edgecolors='k', s=100)
+    for i, txt in enumerate(range(k)):
+        plt.annotate(f"Cluster {txt}", (centroids_pca[i, 0], centroids_pca[i, 1]), fontsize=10)
+    plt.title("PCA Projection of Clusters")
+    plt.xlabel("Principal Component 1")
+    plt.ylabel("Principal Component 2")
+    plt.grid(True)
+    plt.show()

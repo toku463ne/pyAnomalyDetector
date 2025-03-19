@@ -41,7 +41,7 @@ def report(config_file: str, epoch: int) -> Dict:
                     data[data_source["name"]][clusterid][group_name] = {}
                 if host_name not in data[data_source["name"]][clusterid][group_name]:
                     data[data_source["name"]][clusterid][group_name][host_name] = []
-                data[data_source["name"]][clusterid][group_name][host_name].append(row["itemid"])
+                data[data_source["name"]][clusterid][group_name][host_name].append(f'{row["itemid"]}: {row["item_name"]}')
  
     return data
 
@@ -61,11 +61,15 @@ if __name__ == "__main__":
     
     data = report(args.config, args.end)
     
+    data["has_anomalies"] = "no"
     if len(data) > 0:
-        data["has_anomalies"] = "yes"
-    else:
-        data["has_anomalies"] = "no"
-
+        for k, v in data.items():
+            if k == "has_anomalies":
+                continue
+            if len(v) > 0:
+                data["has_anomalies"] = "yes"
+                break
+    
     import json
     if args.output:
         with open(args.output, "w") as f:

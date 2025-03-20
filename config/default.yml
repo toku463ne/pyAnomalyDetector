@@ -56,6 +56,7 @@ anomaly_keep_secs: 86400 # 1day
 kmeans:
   k: 10
   threshold: 0.8
+  threshold2: 1.5
   max_iterations: 10
   n_rounds: 10
 

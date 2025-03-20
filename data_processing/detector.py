@@ -36,7 +36,8 @@ class Detector:
         self.history_recent_retention = self.conf["history_recent_retention"]
         self.kconf = self.conf.get("kmeans", {})
         self.k = self.kconf.get("k", 10)
-        self.threshold = self.kconf.get("threshold", 0.1)
+        self.km_threshold = self.kconf.get("threshold", 0.8)
+        self.km_threshold2 = self.kconf.get("threshold2", 1.5)
         self.max_iterations = self.kconf.get("max_iterations", 10)
         self.n_rounds = self.kconf.get("n_rounds", 10)
         self.item_conds = data_source.get("item_conds", [])
@@ -470,7 +471,7 @@ class Detector:
 
         if k >= len(itemIds):
             k = 2
-        threshold = self.threshold
+        threshold = self.km_threshold
         max_iterations = self.max_iterations
         n_rounds = self.n_rounds
         # get history data
@@ -507,6 +508,9 @@ class Detector:
         clusters, centroids = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
         if self.centroid_dir != "":
             kmeans.save_centroids(centroids, filename=f"{self.centroid_dir}/{endep}.json.gz")
+
+        clusters, _ = kmeans.rearange_centroids(clusters, centroids, threshold2)
+
         return clusters
 
     # filter by cond

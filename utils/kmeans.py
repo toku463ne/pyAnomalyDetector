@@ -179,7 +179,7 @@ def run_kmeans(
 
     return best_clusters, best_centroids
 
-def rearange_centroids(centroids: Dict[int, pd.Series], threshold: float) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
+def rearange_centroids(clusters: Dict[int, int], centroids: Dict[int, pd.Series], threshold: float) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
     # check the centroids and if the euclidean distance between the centroids are less than the threshold
     # then integrate the centroids and assign the charts to the new centroid
     clusterids = list(centroids.keys())
@@ -206,7 +206,11 @@ def rearange_centroids(centroids: Dict[int, pd.Series], threshold: float) -> Tup
     new_centroids = {new_clusterids[clusterid]: new_centroids[clusterid] for clusterid in clusterids}
     old_new_mapping = {clusterid: new_clusterids[old_new_mapping[clusterid]] for clusterid in clusterids}
 
-    return old_new_mapping, new_centroids
+    new_cluster = {}
+    for chartid in clusters.keys():
+        new_cluster[chartid] = old_new_mapping[chartid]
+
+    return new_cluster, new_centroids
                 
 
 def process_clusters(charts: Dict[int, pd.Series], clusters: Dict[int, int]) -> Tuple[ordered_dict, Dict[int, List[int]]]:

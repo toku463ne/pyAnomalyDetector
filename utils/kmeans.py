@@ -175,9 +175,39 @@ def run_kmeans(
         if score < best_score:
             best_clusters = clusters
             best_score = score
-            best_centroids = centroids
-            
+            best_centroids = centroids            
+
     return best_clusters, best_centroids
+
+def rearange_centroids(centroids: Dict[int, pd.Series], threshold: float) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
+    # check the centroids and if the euclidean distance between the centroids are less than the threshold
+    # then integrate the centroids and assign the charts to the new centroid
+    clusterids = list(centroids.keys())
+    old_new_mapping = {}
+    new_centroids = {}
+    for i, clusterid in enumerate(clusterids):
+        if clusterid in old_new_mapping:
+            continue
+        for j in range(i+1, len(clusterids)):
+            if calculate_distance(centroids[clusterid], centroids[clusterids[j]]) < threshold:
+                new_centroids[clusterid] = (centroids[clusterid] + centroids[clusterids[j]]) / 2
+                if clusterids[j] in old_new_mapping:
+                    new_clusterid = old_new_mapping[clusterids[j]]
+                else:
+                    new_clusterid = clusterids[j]
+                old_new_mapping[clusterids[j]] = new_clusterid
+            else:
+                new_centroids[clusterid] = centroids[clusterid]
+                old_new_mapping[clusterid] = clusterid
+
+    # reassing clusterids so that the clusterids are continuous starting from 0
+    clusterids = list(new_centroids.keys())
+    new_clusterids = {clusterid: i for i, clusterid in enumerate(clusterids)}
+    new_centroids = {new_clusterids[clusterid]: new_centroids[clusterid] for clusterid in clusterids}
+    old_new_mapping = {clusterid: new_clusterids[old_new_mapping[clusterid]] for clusterid in clusterids}
+
+    return old_new_mapping, new_centroids
+                
 
 def process_clusters(charts: Dict[int, pd.Series], clusters: Dict[int, int]) -> Tuple[ordered_dict, Dict[int, List[int]]]:
     """

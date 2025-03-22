@@ -11,27 +11,14 @@ class DataGetter:
     def __init__(self, data_source_config):
         self.init_data_source(data_source_config)
 
-    def check_conn(self):
-        return True
-
     # function to initialize the data source. 
     @abstractmethod
     def init_data_source(self, data_source_config):
         pass
 
-    # function to get data from the data source. 
-    # Returns pandas dataframe with columns: itemid, clock, value
-    @abstractmethod
-    def get_history_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
-        pass
 
-    @abstractmethod
-    def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
-        pass
-
-    @abstractmethod
-    def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
-        pass
+    def check_conn(self):
+        return True
 
     # function to get itemIds from the data source. 
     @abstractmethod
@@ -45,6 +32,22 @@ class DataGetter:
     def get_item_host_dict(self, itemIds: List[int]=[]) -> Dict[int, int]:
         return {}
 
+
+    # function to get data from the data source. 
+    # Returns pandas dataframe with columns: itemid, clock, value
+    @abstractmethod
+    def get_history_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    # get itemid, clock, value
+    def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+        pass
+
+    @abstractmethod
+    # get itemid, clock, value_min, value_avg, value_max
+    def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+        pass
     
     # funtion to classify items by host groups
     def classify_by_groups(self, itemIds: List[int], group_names: List[str]) -> dict:

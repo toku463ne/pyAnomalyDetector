@@ -3,7 +3,6 @@
 ## Setup
 **Prepare postgresql server**
 
-
 **Execute the setup script**
 ```bash
 ./setup.sh
@@ -15,6 +14,11 @@ CREATE DATABASE anomdec;
 CREATE USER anomdec_adm WITH ENCRYPTED PASSWORD 'anomdec_pass';
 GRANT ALL PRIVILEGES ON DATABASE anomdec TO anomdec_adm;
 ```
+  
+## How to use  
+1. Collect trend data
+
+
 
 ## Algorithm
 - load config:
@@ -59,80 +63,3 @@ load `default.yml` and an additional config file if provided
 - Alarming:
 	- If there are items from multiple hosts in the same k-means group, send an alarm.
     
-
-  
-## File Structure
-
-To implement the algorithm described, you can structure your Python files as follows:
-
-```
-pyAnomalyDetector/
-│
-├── config/
-│   ├── __init__.py
-│   └── default.yml
-│
-├── data/
-│   ├── __init__.py
-│   └── data_source.py
-│
-├── models/
-│   ├── __init__.py
-│   ├── trends.py
-│   ├── history.py
-│   ├── trends_stats.py
-│   └── scores.py
-│
-├── scripts/
-│   ├── __init__.py
-│   ├── setup_db.py
-│   └── data_conversion.py
-│
-├── utils/
-│   ├── __init__.py
-│   ├── config_loader.py
-│   └── statistics.py
-│
-├── detection/
-│   ├── __init__.py
-│   ├── first_detection.py
-│   ├── normalize_data.py
-│   ├── summarize_data.py
-│   └── final_detection.py
-│
-├── main.py
-└── README.md
-```
-
-### Description of Files
-
-- `config/`: Contains configuration files and loaders.
-    - `default.yml`: Default configuration file.
-    - `config_loader.py`: Utility to load configuration files.
-
-- `data/`: Handles data source operations.
-    - `data_source.py`: Functions to fetch and preprocess data from the source.
-
-- `models/`: Contains database models and operations.
-    - `trends.py`: Model and operations for `anomdec.trends` table.
-    - `history.py`: Model and operations for `anomdec.history` table.
-    - `trends_stats.py`: Model and operations for `anomdec.trends_stats` table.
-    - `scores.py`: Model and operations for `anomdec.scores` table.
-
-- `scripts/`: Contains setup and data conversion scripts.
-    - `setup_db.py`: Script to set up the PostgreSQL database.
-    - `data_conversion.py`: Script to convert data into the required format.
-
-- `utils/`: Utility functions and helpers.
-    - `statistics.py`: Functions to calculate statistics.
-
-- `detection/`: Contains detection algorithms.
-    - `first_detection.py`: Implementation of the first detection algorithm.
-    - `normalize_data.py`: Functions to normalize recent data.
-    - `summarize_data.py`: Functions to summarize recent data.
-    - `final_detection.py`: Implementation of the final detection algorithm.
-
-- `main.py`: Entry point of the application.
-
-This structure will help you organize your code and make it easier to maintain and extend. 
-  

@@ -188,27 +188,27 @@ def rearange_centroids(clusters: Dict[int, int], centroids: Dict[int, pd.Series]
     for i, clusterid in enumerate(clusterids):
         if clusterid in old_new_mapping:
             continue
+        new_centroids[clusterid] = centroids[clusterid]
         for j in range(i+1, len(clusterids)):
-            if calculate_distance(centroids[clusterid], centroids[clusterids[j]]) < threshold:
-                new_centroids[clusterid] = (centroids[clusterid] + centroids[clusterids[j]]) / 2
-                if clusterids[j] in old_new_mapping:
-                    new_clusterid = old_new_mapping[clusterids[j]]
+            clusterid2 = clusterids[j]
+            if calculate_distance(centroids[clusterid], centroids[clusterid2]) < threshold:
+                new_centroids[clusterid] = (centroids[clusterid] + centroids[clusterid2]) / 2
+                if clusterid2 in old_new_mapping:
+                    old_new_mapping[clusterid2] = old_new_mapping[clusterid2]
                 else:
-                    new_clusterid = clusterids[j]
-                old_new_mapping[clusterids[j]] = new_clusterid
-            else:
-                new_centroids[clusterid] = centroids[clusterid]
-                old_new_mapping[clusterid] = clusterid
+                    old_new_mapping[clusterid2] = clusterid2
+
+            
 
     # reassing clusterids so that the clusterids are continuous starting from 0
     clusterids = list(new_centroids.keys())
     new_clusterids = {clusterid: i for i, clusterid in enumerate(clusterids)}
     new_centroids = {new_clusterids[clusterid]: new_centroids[clusterid] for clusterid in clusterids}
-    old_new_mapping = {clusterid: new_clusterids[old_new_mapping[clusterid]] for clusterid in clusterids}
+    #old_new_mapping = {clusterid: new_clusterids[old_new_mapping[clusterid]] for clusterid in clusterids}
 
     new_cluster = {}
-    for chartid in clusters.keys():
-        new_cluster[chartid] = old_new_mapping[chartid]
+    for chartid, clusterid in clusters.items():
+        new_cluster[chartid] = old_new_mapping[clusterid]
 
     return new_cluster, new_centroids
                 

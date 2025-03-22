@@ -19,4 +19,7 @@ date;time nice python3 reporter.py -c $config_path --end $end --output $report_p
 echo "$(date) python3 viewer.py -c $config_path"
 date;time nice python3 viewer.py -c $config_path
 
+echo "$(date) python3 viewer.py -c $config_path -m bycluster"
+date;time nice python3 viewer.py -c $config_path -m bycluster
+
 echo completed

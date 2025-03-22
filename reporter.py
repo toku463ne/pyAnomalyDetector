@@ -21,6 +21,7 @@ def report(config_file: str, epoch: int) -> Dict:
         
         last_created = df["created"].max()
         df = df[df["created"] == last_created]
+        df = df[df["clusterid"] != -1]
         
         df = df.groupby(["clusterid", "hostid"]).first().reset_index()
 

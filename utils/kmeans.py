@@ -179,38 +179,39 @@ def run_kmeans(
 
     return best_clusters, best_centroids
 
-def rearange_centroids(clusters: Dict[int, int], centroids: Dict[int, pd.Series], threshold: float) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
-    # check the centroids and if the euclidean distance between the centroids are less than the threshold
-    # then integrate the centroids and assign the charts to the new centroid
+# Rearange the centroids and assign the charts to the new centroid
+# How to rearange the centroids:
+# 1. check the centroids and if the euclidean distance between the centroids are less than the threshold
+# then integrate the centroids and assign the charts to the new centroid
+# 2. repeat the above step until there is no more centroids to integrate
+# 3. return the new centroids and the mapping of the old centroid to the new centroid
+def rearange_centroids(centroids: Dict[int, pd.Series], threshold: float) -> Tuple[Dict[int, pd.Series], Dict[int, int]]:
     clusterids = list(centroids.keys())
     old_new_mapping = {}
     new_centroids = {}
+    new_clusterid = 0
     for i, clusterid in enumerate(clusterids):
         if clusterid in old_new_mapping:
             continue
+        old_new_mapping[clusterid] = new_clusterid
         new_centroids[clusterid] = centroids[clusterid]
+        sum_centroid = centroids[clusterid].copy()
+        cnt_centroid = 1
         for j in range(i+1, len(clusterids)):
             clusterid2 = clusterids[j]
-            if calculate_distance(centroids[clusterid], centroids[clusterid2]) < threshold:
-                new_centroids[clusterid] = (centroids[clusterid] + centroids[clusterid2]) / 2
+            dist = calculate_distance(centroids[clusterid], centroids[clusterid2])
+            if dist < threshold:
                 if clusterid2 in old_new_mapping:
-                    old_new_mapping[clusterid2] = old_new_mapping[clusterid2]
+                    continue
                 else:
-                    old_new_mapping[clusterid2] = clusterid2
+                    sum_centroid += centroids[clusterid2].copy()
+                    cnt_centroid += 1
+                    old_new_mapping[clusterid2] = new_clusterid
+        new_clusterid += 1
+        if cnt_centroid > 1:
+            new_centroids[clusterid] = sum_centroid / cnt_centroid            
 
-            
-
-    # reassing clusterids so that the clusterids are continuous starting from 0
-    clusterids = list(new_centroids.keys())
-    new_clusterids = {clusterid: i for i, clusterid in enumerate(clusterids)}
-    new_centroids = {new_clusterids[clusterid]: new_centroids[clusterid] for clusterid in clusterids}
-    #old_new_mapping = {clusterid: new_clusterids[old_new_mapping[clusterid]] for clusterid in clusterids}
-
-    new_cluster = {}
-    for chartid, clusterid in clusters.items():
-        new_cluster[chartid] = old_new_mapping[clusterid]
-
-    return new_cluster, new_centroids
+    return new_centroids, old_new_mapping
                 
 
 def process_clusters(charts: Dict[int, pd.Series], clusters: Dict[int, int]) -> Tuple[ordered_dict, Dict[int, List[int]]]:
@@ -329,20 +330,21 @@ def plot_heatmap(centroids):
         centroids (dict): Dictionary of clusterId to pd.Series representing centroids.
     """
     k = len(centroids)  # Number of clusters
-    
-    # Convert centroids to NumPy array
-    centroid_values = np.vstack([centroids[i].values for i in range(k)])
+    clusterids = list(centroids.keys())
     
     # Compute pairwise distances between centroids
-    distance_matrix = squareform(pdist(centroid_values, metric='euclidean'))
+    distance_matrix = np.zeros((k, k))
+    for i in range(k):
+        for j in range(k):
+            distance_matrix[i, j] = calculate_distance(centroids[clusterids[i]], centroids[clusterids[j]])
     
     # Convert to DataFrame for visualization
-    distance_df = pd.DataFrame(distance_matrix, index=[f'Cluster {i}' for i in range(k)],
-                               columns=[f'Cluster {i}' for i in range(k)])
+    distance_df = pd.DataFrame(distance_matrix, index=[f'c{clusterids[i]}' for i in range(k)],
+                               columns=[f'c{clusterids[i]}' for i in range(k)])
     
     # Plot heatmap
     plt.figure(figsize=(8, 6))
-    sns.heatmap(distance_df, annot=True, fmt=".2f", cmap="coolwarm", linewidths=0.5)
+    sns.heatmap(distance_df, annot=True, fmt=".1f", cmap="coolwarm", linewidths=0.5)
     plt.title("Cluster Distance Heatmap")
     plt.show()
 

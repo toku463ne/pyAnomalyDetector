@@ -17,27 +17,29 @@ example:
                 - host3
                 - host4
 """
-from data_getter.data_getter import DataGetter
 from typing import Dict, List
-
 import requests
 import json
 import pandas as pd
+
+from data_getter.data_getter import DataGetter
+import utils.config_loader as config_loader
 
 class LoganGetter(DataGetter):
     fields = ['itemid', 'clock', 'value']
     loggroups_fields = ['itemid', 'count', 'score', 'text']
 
     def init_data_source(self, data_source_config):
+        config = config_loader.conf
         self.base_url = data_source_config['base_url']
         self.group_names = data_source_config['group_names']
         self.host_names = []
-        for node in self.group_names:
+        for _, node in self.group_names.items():
             self.host_names.extend(node['host_names'])
         self.data: Dict[str, pd.DataFrame] = {}
         self.loggroup_data: Dict[str, pd.DataFrame] = {}
         self.data_loaded = False
-        self.trends_interval = data_source_config['trends_interval']
+        self.trends_interval = config['trends_interval']
         self.headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
@@ -87,25 +89,45 @@ class LoganGetter(DataGetter):
 
     def get_itemIds(self, item_names: List[str] = [],
                     host_names: List[str] = [], 
-                    group_names: List[str] = []) -> List[int]:
+                    itemIds: List[int] = [],
+                    group_names: List[str] = [],
+                    max_itemIds=0) -> List[int]:
         if len(self.data) == 0:
             self._load_data()
-        itemIds = []
+        itemIds2 = []
         # filter by host_names
         host_names = host_names if len(host_names) > 0 else self.host_names
         # filter host_names by group_names
+        host_names2 = []
         if len(group_names) > 0:
-            host_names = [host for host in host_names if host in group_names]
+            for group_name in group_names:
+                for host in host_names:
+                    if host in self.group_names[group_name]['host_names']:
+                        host_names2.append(host)
+        else:
+            host_names2 = host_names
+        host_names = host_names2
         
         if len(item_names) > 0:
             # filter loggroups_data['text'] by item_names regex
             for host in host_names:
                 data = self.loggroup_data[host]
-                itemIds.extend(data[data['text'].str.contains('|'.join(item_names))]['itemid'].tolist())
+                itemIds2.extend(data[data['text'].str.contains('|'.join(item_names))]['itemid'].tolist())
         else:
             for host in host_names:
                 data = self.data[host]
-                itemIds.extend(data['itemid'].tolist())
+                itemIds2.extend(data['itemid'].tolist())
+
+        itemIds2 = list(set(itemIds2))
+
+        if len(itemIds) > 0:
+            # filter itemIds2 by itemIds
+            itemIds2 = [x for x in itemIds2 if x in itemIds]
+
+        itemIds = itemIds2
+
+        if max_itemIds > 0:
+            itemIds = itemIds[:max_itemIds]
 
         return itemIds
     

@@ -1,23 +1,22 @@
 admdb:
-  host: 192.168.4.91
-  user: anomdec
-  password: '{{ ADM_DB_PASSWORD }}'
+  host: 127.0.0.1
+  user: anomdec_adm
+  password: 'anomdec_pass'
   dbname: anomdec
   port: 5432
 
-logging:
-  level: INFO
-  log_file: /tmp/anomdec/test_logan.log
-
 centroid_dir: /tmp/anomdec/centroids
 
+history_interval: 3600
+history_retention: 24
+history_recent_retention: 6
 trend_interval: 86400
 trend_retention: 14   
 
 data_sources:
   - name: "test_logan"
     type: "logan"
-    base_url: 'http://localhost:8000/'
+    base_url: 'http://localhost:8001/'
     group_names:
       nw:
         host_names:

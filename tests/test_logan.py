@@ -18,6 +18,7 @@ class TestLogan(unittest.TestCase):
         output = os.path.join(testlib.setup_testdir("test_logan"), "result")
 
         itemIds = []
+        trends_stats.update_stats(config, endep, 0, initialize=True)
 
 
         data = detector.run(config, endep=endep , itemIds=itemIds, 

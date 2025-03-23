@@ -5,7 +5,7 @@
 admdb:
   host: 127.0.0.1
   user: anomdec_adm
-  password: '{{ ADM_DB_PASSWORD }}'
+  password: anomdec_pass
   dbname: anomdec
   port: 5432
 

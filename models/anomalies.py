@@ -27,7 +27,11 @@ class AnomaliesModel(Model):
             itemIds.append(itemId)
         return itemIds
 
-    
+    def get_last_updated(self) -> float:
+        sql = f"SELECT max(created) FROM {self.table_name}"
+        (epoch,) = self.db.select1rec(sql)
+        return epoch
+
     def insert_data(self, data: pd.DataFrame):
         for _, row in data.iterrows():
             item_name = row.item_name.replace("'", "")

@@ -48,17 +48,17 @@ trends_min_count: 14
 history_interval: 600
 history_retention: 18
 history_recent_retention: 6
-anomaly_keep_secs: 86400 # 1day  
 
 ##################################################
 #  kmeans clustering params
 ##################################################
 kmeans:
   k: 10
-  threshold: 0.8
-  threshold2: 1.99
+  threshold: 0.5
+  threshold2: 1.5
   max_iterations: 10
   n_rounds: 10
+  detection_period: 43200
 
 
 ##################################################
@@ -70,7 +70,7 @@ lambda3_threshold: 1.0 # lambda for the 2nd filtering (for history_retention)
 lambda4_threshold: 2.0 # lambda for the 2nd filtering (for history_recent_retention)
 ignore_diff_rate: 0.2 # ignore if the peaks are just less than this rate
 anomaly_valid_count_rate: 0.8 # valid anomaly if the count is more than this rate
-anomaly_cache_period: 86400 # 1 day
+anomaly_keep_secs: 86400 # 1day  
 batch_size: 100
 
 ##################################################

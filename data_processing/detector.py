@@ -38,6 +38,7 @@ class Detector:
         self.k = self.kconf.get("k", 10)
         self.km_threshold = self.kconf.get("threshold", 0.8)
         self.km_threshold2 = self.kconf.get("threshold2", 1.5)
+        self.km_detection_period = self.kconf["detection_period"]
         self.max_iterations = self.kconf.get("max_iterations", 10)
         self.n_rounds = self.kconf.get("n_rounds", 10)
         self.item_conds = data_source.get("item_conds", [])
@@ -425,6 +426,31 @@ class Detector:
 
         return itemIds
 
+    def _get_normalized_charts(self, itemIds: List[int], 
+                base_clocks: List[int]) -> Dict[int, pd.Series]:
+        dg = self.dg
+        hist_df = dg.get_history_data(startep=base_clocks[0], endep=base_clocks[-1], itemIds=itemIds)
+        if hist_df.empty:
+            return 
+        charts = {}
+        for itemId in itemIds:
+            item_hist_df = hist_df[hist_df['itemid'] == itemId]
+            if item_hist_df.empty:
+                continue
+
+            # sort by clock
+            item_hist_df = item_hist_df.sort_values(by='clock')
+
+            values = normalizer.fit_to_base_clocks(
+                base_clocks, 
+                item_hist_df['clock'].tolist(), 
+                item_hist_df['value'].tolist())
+            charts[itemId] = pd.Series(data=values)
+        
+        return charts
+
+
+
     def _update_history_batch(self, itemIds: List[int], 
                 base_clocks: List[int], oldep: int):
         dg = self.dg
@@ -463,11 +489,14 @@ class Detector:
             
 
 
-    def _classify_anomalies(self, itemIds: List[int], endep=0) -> Dict[int, List[int]]:
-        ms = self.ms
+    def _classify_anomalies(self, itemIds: List[int], endep: int) -> Dict[int, List[int]]:
+        #ms = self.ms
+        dg = self.dg
         k = self.k
         if len(itemIds) < 2:    
             return {}
+
+        startep = endep - self.km_detection_period
 
         if k >= len(itemIds):
             k = 2
@@ -475,12 +504,12 @@ class Detector:
         max_iterations = self.max_iterations
         n_rounds = self.n_rounds
         # get history data
-        history_df = ms.history.get_data(itemIds)
+        #history_df = ms.history.get_data(itemIds)
+        history_df = dg.get_history_data(startep=startep, endep=endep, itemIds=itemIds)
         if history_df.empty:
             return {}
-
+    
         base_clocks = list(set(history_df["clock"].tolist()))
-
         
         # normalize history data so that max=1 and min=0
         history_df['value'] = history_df.groupby('itemid')['value'].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
@@ -509,9 +538,9 @@ class Detector:
         if self.centroid_dir != "":
             kmeans.save_centroids(centroids, filename=f"{self.centroid_dir}/{endep}.json.gz")
 
-        _, old_new_mapping = kmeans.rearange_centroids(clusters, centroids, self.km_threshold2)
-        for chartid, clusterid in clusters.items():
-            clusters[chartid] = old_new_mapping[clusterid]
+        #_, old_new_mapping = kmeans.rearange_centroids(centroids, self.km_threshold2)
+        #for chartid, clusterid in clusters.items():
+        #    clusters[chartid] = old_new_mapping[clusterid]
 
         return clusters
 
@@ -702,10 +731,13 @@ class Detector:
         return results
 
 
-    def update_anomalies(self, epoch: int):
+    def update_anomalies(self, epoch=0):
         ms = self.ms
         all_anomaly_itemIds = ms.anomalies.get_itemids()
         all_anomaly_itemIds = list(set(all_anomaly_itemIds))
+
+        if epoch == 0:
+            epoch = ms.anomalies.get_last_updated()
 
         # classify anomaly_itemIds3 by kmeans
         log(f"detector.classify_anomalies(anomaly_itemIds2)")
@@ -723,6 +755,6 @@ def detect(data_source: Dict,
                            base_clocks, itemIds, group_names, 
                            skip_history_update=skip_history_update)
 
-def update_anomalies(data_source: Dict, epoch: int):
+def update_anomalies(data_source: Dict, epoch=0):
     detector = Detector(data_source)
     detector.update_anomalies(epoch)

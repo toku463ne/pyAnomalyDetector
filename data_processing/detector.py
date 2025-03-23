@@ -701,6 +701,17 @@ class Detector:
         ms.anomalies.delete_old_entries(endep - anomaly_keep_secs)
         return results
 
+
+    def update_anomalies(self, epoch: int):
+        ms = self.ms
+        all_anomaly_itemIds = ms.anomalies.get_itemids()
+        all_anomaly_itemIds = list(set(all_anomaly_itemIds))
+
+        # classify anomaly_itemIds3 by kmeans
+        log(f"detector.classify_anomalies(anomaly_itemIds2)")
+        clusters = self._classify_anomalies(all_anomaly_itemIds, epoch)
+        ms.anomalies.update_clusterid(clusters)
+
 def detect(data_source: Dict, 
            t_startep: int, h_startep1: int, h_startep2: int, endep: int,
            base_clocks: List[int],
@@ -711,3 +722,7 @@ def detect(data_source: Dict,
     return detector.detect(t_startep, h_startep1, h_startep2, endep, 
                            base_clocks, itemIds, group_names, 
                            skip_history_update=skip_history_update)
+
+def update_anomalies(data_source: Dict, epoch: int):
+    detector = Detector(data_source)
+    detector.update_anomalies(epoch)

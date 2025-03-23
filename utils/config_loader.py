@@ -56,6 +56,7 @@ def load_config(config_path=None, additional_context={}):
     if l:
         # default log directory
         if LOG_DIR in context:
+            os.makedirs(context[LOG_DIR], exist_ok=True)
             log_file = f"{context[LOG_DIR]}/anomdec.log"
         elif "log_file" in l:
             log_file = l["log_file"]

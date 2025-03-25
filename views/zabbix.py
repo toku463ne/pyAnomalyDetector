@@ -5,7 +5,11 @@ import pandas as pd
 from pyzabbix import ZabbixAPI
 
 from views.view import View
-from utils import log
+import logging
+
+def log(msg, level=logging.INFO):
+    msg = f"[views/zabbix.py] {msg}"
+    logging.log(level, msg)
 
 class ZabbixDashboard(View):
     def __init__(self, config):

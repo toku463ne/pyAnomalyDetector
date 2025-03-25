@@ -54,7 +54,7 @@ history_recent_retention: 6
 ##################################################
 kmeans:
   k: 10
-  threshold: 0.2
+  threshold: 0.5
   threshold2: 1.5
   max_iterations: 10
   n_rounds: 10

@@ -5,6 +5,7 @@ import pandas as pd
 from pyzabbix import ZabbixAPI
 
 from views.view import View
+from utils import log
 
 class ZabbixDashboard(View):
     def __init__(self, config):
@@ -16,6 +17,7 @@ class ZabbixDashboard(View):
 
     # show dashboard
     def show(self, data: pd.DataFrame):
+        log("show dashboard")
         if len(data) == 0:
             return
         # get min(itemid) for each group_name, hostid
@@ -35,6 +37,7 @@ class ZabbixDashboard(View):
         self.create_dashboard(self.dashboard_name, pagedata)
 
     def show_latest(self, data: pd.DataFrame):
+        log("show latest dashboard")
         if len(data) == 0:
             return
         last_ep = data["created"].max()
@@ -53,6 +56,7 @@ class ZabbixDashboard(View):
         self.create_dashboard(dashboard_name, pagedata)
 
     def show_by_cluster(self, data: pd.DataFrame, ignore_single_member=False):
+        log("show by cluster dashboard")
         if len(data) == 0:
             return
 
@@ -65,6 +69,8 @@ class ZabbixDashboard(View):
         for _, row in data.iterrows():
             clusterid = row["clusterid"]
             if clusterid not in pagedata:
+                if len(pagedata) >= 50:
+                    break
                 pagedata[clusterid] = []
             pagedata[clusterid].append(row["itemid"])
         

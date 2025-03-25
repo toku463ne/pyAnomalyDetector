@@ -536,7 +536,9 @@ class Detector:
         # run kmeans
         clusters, centroids = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
         if self.centroid_dir != "":
-            kmeans.save_centroids(centroids, filename=f"{self.centroid_dir}/{endep}.json.gz")
+            filename = f"{self.centroid_dir}/{endep}.json.gz"
+            log(f"save centroids to {filename}")
+            kmeans.save_centroids(centroids, filename=filename)
 
         #_, old_new_mapping = kmeans.rearange_centroids(centroids, self.km_threshold2)
         #for chartid, clusterid in clusters.items():

@@ -22,7 +22,7 @@ def calculate_distance(chart1: pd.Series, chart2: pd.Series) -> float:
     Returns:
         float: Euclidean distance between the two charts.
     """
-    return np.linalg.norm(chart1 - chart2)
+    return np.linalg.norm(chart1 - chart2) / len(chart2)
 
 def initialize_centroids(charts: Dict[int, pd.Series], k: int) -> Dict[int, pd.Series]:
     """

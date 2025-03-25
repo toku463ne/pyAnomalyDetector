@@ -322,13 +322,18 @@ def plot_clusters(charts: Dict[int, pd.Series], clusters: Dict[int, int]):
         ax.legend()
         plt.show()
 
-def plot_heatmap(centroids):
+def plot_heatmap(org_centroids, N: int = 0):
     """
     Plots a heatmap of the pairwise Euclidean distances between cluster centroids.
     
     Parameters:
         centroids (dict): Dictionary of clusterId to pd.Series representing centroids.
     """
+    if N > 0:
+        centroids = dict(list(org_centroids.items())[:N]).copy()
+    else:  
+        centroids = org_centroids.copy()
+    
     k = len(centroids)  # Number of clusters
     clusterids = list(centroids.keys())
     

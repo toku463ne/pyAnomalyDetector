@@ -540,9 +540,9 @@ class Detector:
             log(f"save centroids to {filename}")
             kmeans.save_centroids(centroids, filename=filename)
 
-        #_, old_new_mapping = kmeans.rearange_centroids(centroids, self.km_threshold2)
-        #for chartid, clusterid in clusters.items():
-        #    clusters[chartid] = old_new_mapping[clusterid]
+        _, old_new_mapping = kmeans.rearange_centroids(centroids, self.km_threshold2)
+        for chartid, clusterid in clusters.items():
+            clusters[chartid] = old_new_mapping[clusterid]
 
         return clusters
 

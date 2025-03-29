@@ -59,15 +59,17 @@ class ZabbixDashboard(View):
         dashboard_name = f"{self.dashboard_name}_latest"
         self.create_dashboard(dashboard_name, pagedata)
 
-    def show_by_cluster(self, data: pd.DataFrame, ignore_single_member=False):
+    def show_by_cluster(self, data: pd.DataFrame):
         log("show by cluster dashboard")
         if len(data) == 0:
             return
 
         data = data.sort_values(by=["clusterid", "hostid", "itemid"])
         data = data.drop_duplicates(subset=["clusterid", "hostid", "itemid"])
-        if ignore_single_member:
-            data = data[data.groupby("clusterid")["clusterid"].transform("count") > 1]
+        data_multi = data[data.groupby("clusterid")["clusterid"].transform("count") > 1]
+        data_single = data[data.groupby("clusterid")["clusterid"].transform("count") == 1]
+        data_single.loc[:, "clusterid"] = -1
+        data = pd.concat([data_single, data_multi])
         
         pagedata = {}
         for _, row in data.iterrows():

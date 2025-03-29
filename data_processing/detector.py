@@ -544,6 +544,9 @@ class Detector:
         for chartid, clusterid in clusters.items():
             clusters[chartid] = old_new_mapping[clusterid]
 
+        # reassign clusters
+        kmeans.reassign_charts(charts, clusters, centroids, self.km_threshold2)
+
         return clusters
 
     # filter by cond

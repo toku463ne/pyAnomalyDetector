@@ -212,6 +212,36 @@ def rearange_centroids(centroids: Dict[int, pd.Series], threshold: float) -> Tup
             new_centroids[clusterid] = sum_centroid / cnt_centroid            
 
     return new_centroids, old_new_mapping
+
+
+def reassign_charts(charts: Dict[int, pd.Series], clusters: Dict[int, int], 
+                    centroids: Dict[int, pd.Series],
+                    threshold: float) -> Dict[int, int]:
+    """
+    check all charts and calculate the distance to the centroids and if the distance is less than the threshold
+    then assign the chart to the cluster with clusterid = -1 
+    """
+    for chart_id, cluster_id in clusters.items():
+        if cluster_id == -1:
+            continue
+        dist = calculate_distance(charts[chart_id], centroids[cluster_id])
+        if dist < threshold:
+            clusters[chart_id] = -1
+
+    # check if charts in clusterid = -1 belong to other clusters
+    for chart_id, cluster_id in clusters.items():
+        if cluster_id != -1:
+            continue
+        min_dist = float('inf')
+        min_cluster_id = -1
+        for centroid_id, centroid in centroids.items():
+            dist = calculate_distance(charts[chart_id], centroid)
+            if dist < min_dist and dist < threshold:
+                min_dist = dist
+                min_cluster_id = centroid_id
+        clusters[chart_id] = min_cluster_id
+
+    return clusters
                 
 
 def process_clusters(charts: Dict[int, pd.Series], clusters: Dict[int, int]) -> Tuple[ordered_dict, Dict[int, List[int]]]:

@@ -11,18 +11,21 @@ import seaborn as sns
 from scipy.spatial.distance import pdist, squareform
 from sklearn.decomposition import PCA
 
-def calculate_distance(chart1: pd.Series, chart2: pd.Series) -> float:
+def calculate_distance(chart1: pd.Series, op_chart1: pd.Series, chart2: pd.Series) -> float:
     """
     Calculate the Euclidean distance between two charts.
 
     Parameters:
         chart1 (pd.Series): Data of the first chart.
+        op_chart1 (pd.Series): Opposite data of the first chart.
         chart2 (pd.Series): Data of the second chart.
 
     Returns:
         float: Euclidean distance between the two charts.
     """
-    return np.linalg.norm(chart1 - chart2) / np.sqrt(len(chart1))
+    d1 = np.linalg.norm(chart1 - chart2) / np.sqrt(len(chart1))
+    d2 = np.linalg.norm(op_chart1 - chart2) / np.sqrt(len(chart1))
+    return min(d1, d2)
 
 def initialize_centroids(charts: Dict[int, pd.Series], k: int) -> Dict[int, pd.Series]:
     """
@@ -87,7 +90,9 @@ def calculate_centroids(charts: Dict[int, pd.Series], clusters: Dict[int, int]) 
     
     return centroids
 
-def assign_clusters(charts: Dict[int, pd.Series], centroids: Dict[int, pd.Series], threshold: float) -> Dict[int, int]:
+def assign_clusters(charts: Dict[int, pd.Series], 
+                    op_charts: Dict[int, pd.Series],
+                    centroids: Dict[int, pd.Series], threshold: float) -> Dict[int, int]:
     """
     Assign clusters to charts based on centroids.
 
@@ -118,7 +123,7 @@ def assign_clusters(charts: Dict[int, pd.Series], centroids: Dict[int, pd.Series
             clusters[chart_id] = new_cluster_id
     return clusters
 
-def kmeans(charts: Dict[int, pd.Series], 
+def kmeans(charts: Dict[int, pd.Series], op_charts: Dict[int, pd.Series],
            k: int, threshold: float, max_iterations: int) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
     """
     Run KMeans clustering.
@@ -138,7 +143,7 @@ def kmeans(charts: Dict[int, pd.Series],
             centroids = initialize_centroids(charts, k)
         else:
             centroids = calculate_centroids(charts, clusters)
-        new_clusters = assign_clusters(charts, centroids, threshold)
+        new_clusters = assign_clusters(charts, op_charts, centroids, threshold)
         if clusters == new_clusters:
             break
         clusters = new_clusters
@@ -168,9 +173,15 @@ def run_kmeans(
     best_clusters = None
     best_score = float('inf')
     best_centroids = None
+
+    # create the opposite of the charts
+    op_charts = {}
+    for chart_id, chart_data in charts.items():
+        op_charts[chart_id] = 1 - chart_data
+
     
     for _ in range(n_rounds):
-        clusters, centroids = kmeans(charts, k, threshold, max_iterations)
+        clusters, centroids = kmeans(charts, op_charts, k, threshold, max_iterations)
         score = len(centroids)
         if score < best_score:
             best_clusters = clusters
@@ -190,6 +201,11 @@ def rearange_centroids(centroids: Dict[int, pd.Series], threshold: float) -> Tup
     old_new_mapping = {}
     new_centroids = {}
     new_clusterid = 0
+
+    op_centroids = {}
+    for clusterid, centroid in centroids.items():
+        op_centroids[clusterid] = 1 - centroid
+
     for i, clusterid in enumerate(clusterids):
         if clusterid in old_new_mapping:
             continue
@@ -199,7 +215,7 @@ def rearange_centroids(centroids: Dict[int, pd.Series], threshold: float) -> Tup
         cnt_centroid = 1
         for j in range(i+1, len(clusterids)):
             clusterid2 = clusterids[j]
-            dist = calculate_distance(centroids[clusterid], centroids[clusterid2])
+            dist = calculate_distance(centroids[clusterid], op_centroids[clusterid], centroids[clusterid2])
             if dist < threshold:
                 if clusterid2 in old_new_mapping:
                     continue
@@ -214,17 +230,22 @@ def rearange_centroids(centroids: Dict[int, pd.Series], threshold: float) -> Tup
     return new_centroids, old_new_mapping
 
 
-def reassign_charts(charts: Dict[int, pd.Series], clusters: Dict[int, int], 
+def reassign_charts(charts: Dict[int, pd.Series], 
+                    clusters: Dict[int, int], 
                     centroids: Dict[int, pd.Series],
                     threshold: float) -> Dict[int, int]:
     """
     check all charts and calculate the distance to the centroids and if the distance is less than the threshold
     then assign the chart to the cluster with clusterid = -1 
     """
+    op_charts = {}
+    for chart_id, chart_data in charts.items():
+        op_charts[chart_id] = 1 - chart_data
+
     for chart_id, cluster_id in clusters.items():
         if cluster_id == -1:
             continue
-        dist = calculate_distance(charts[chart_id], centroids[cluster_id])
+        dist = calculate_distance(charts[chart_id], op_charts[chart_id], centroids[cluster_id])
         if dist < threshold:
             clusters[chart_id] = -1
 
@@ -235,7 +256,7 @@ def reassign_charts(charts: Dict[int, pd.Series], clusters: Dict[int, int],
         min_dist = float('inf')
         min_cluster_id = -1
         for centroid_id, centroid in centroids.items():
-            dist = calculate_distance(charts[chart_id], centroid)
+            dist = calculate_distance(charts[chart_id], op_charts[chart_id], centroid)
             if dist < min_dist and dist < threshold:
                 min_dist = dist
                 min_cluster_id = centroid_id
@@ -359,6 +380,10 @@ def plot_heatmap(org_centroids, N: int = 0):
     Parameters:
         centroids (dict): Dictionary of clusterId to pd.Series representing centroids.
     """
+    op_centroids = {}
+    for clusterid, centroid in org_centroids.items():
+        op_centroids[clusterid] = 1 - centroid
+
     if N > 0:
         centroids = dict(list(org_centroids.items())[:N]).copy()
     else:  
@@ -371,7 +396,9 @@ def plot_heatmap(org_centroids, N: int = 0):
     distance_matrix = np.zeros((k, k))
     for i in range(k):
         for j in range(k):
-            distance_matrix[i, j] = calculate_distance(centroids[clusterids[i]], centroids[clusterids[j]])
+            distance_matrix[i, j] = calculate_distance(centroids[clusterids[i]], 
+                                                       op_centroids[clusterids[i]], 
+                                                       centroids[clusterids[j]])
     
     # Convert to DataFrame for visualization
     distance_df = pd.DataFrame(distance_matrix, index=[f'c{clusterids[i]}' for i in range(k)],

@@ -6,9 +6,10 @@ seaborn
 scipy
 psycopg2-binary
 jinja2
-#psycopg2
 pyyaml
 cython
-#Cython
 pyzabbix
 seaborn
+flask
+plotly
+plotly-express

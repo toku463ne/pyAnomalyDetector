@@ -33,6 +33,7 @@ class LoganGetter(DataGetter):
         config = config_loader.conf
         self.base_url = data_source_config['base_url']
         self.group_names = data_source_config['group_names']
+        self.minimal_group_size = data_source_config.get('minimal_group_size', 1000)
         self.host_names = []
         for _, node in self.group_names.items():
             self.host_names.extend(node['host_names'])
@@ -64,7 +65,15 @@ class LoganGetter(DataGetter):
             data.columns = self.loggroups_fields
         else:
             data = pd.DataFrame(columns=self.loggroups_fields)
+        # filter by minimal_group_size
+        if len(data) > 0:
+            data = data[data['count'] >= self.minimal_group_size]
+
         self.loggroup_data[host_name] = data
+
+        # get itemids
+        itemIds = data['itemid'].tolist()
+        itemIds = list(set(itemIds))
         
         # get metrics data
         url = self.base_url + host_name + '/history.csv'
@@ -74,6 +83,11 @@ class LoganGetter(DataGetter):
             data.columns = self.fields
         else:
             data = pd.DataFrame(columns=self.fields)
+
+        # filter by itemIds
+        if len(data) > 0:
+            data = data[data['itemid'].isin(itemIds)]
+
         self.data[host_name] = data
 
 

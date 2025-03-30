@@ -547,6 +547,23 @@ class Detector:
         # reassign clusters
         kmeans.reassign_charts(charts, clusters, centroids, self.km_threshold2)
 
+        # get charts with clusterid = -1
+        clusters_0 = {chartid: clusterid for chartid, clusterid in clusters.items() if clusterid == -1}
+        if len(clusters_0) > 3:
+            # do kmeans again
+            clusters_0, centroids_0 = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
+
+        if len(clusters_0) > 0:
+            max_clusterid = max(clusters.values())
+            # update clusters with clusters_0 starting from max_clusterid + 1
+            for chartid, clusterid in clusters_0.items():
+                clusters[chartid] = clusterid + max_clusterid + 1
+
+            # update centroids with centroids_0
+            for chartid, clusterid in clusters.items():
+                if clusterid in centroids_0:
+                    centroids[chartid] = centroids_0[clusterid]
+
         return clusters
 
     # filter by cond

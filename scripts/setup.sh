@@ -9,10 +9,9 @@ set -eu
 sudo apt-get update
 
 # Install Python3 and pip
-sudo apt-get install -y python3 python3-pip python3-apt python3-distutils python3-setuptools
-
-# Install virtualenv
-pip3 install virtualenv
+sudo apt-get install -y python3 python3-pip python3-apt python3-distutils python3-setuptools python3-virtualenv
+# Install additional dependencies
+sudo apt-get install -y build-essential libssl-dev libffi-dev python3-dev libxml2-dev libxslt1-dev zlib1g-dev
 
 # Create a virtual environment
 virtualenv $HOME/venv

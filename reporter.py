@@ -8,7 +8,7 @@ def report(config_file: str, epoch: int) -> Dict:
     config_loader.load_config(config_file)
     conf = config_loader.conf
 
-    anomaly_cache_ep = epoch - conf['anomaly_cache_period']
+    anomaly_cache_ep = epoch - conf['anomaly_keep_secs']
     data = {}
     for data_source in conf["data_sources"]:
         ms = ModelsSet(data_source["name"])

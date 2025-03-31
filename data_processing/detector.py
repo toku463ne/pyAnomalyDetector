@@ -533,6 +533,9 @@ class Detector:
         if k >= len(charts):
             k = 2
 
+        if len(charts)/2 < k:
+            k = int(len(charts)/2)
+
         # run kmeans
         clusters, centroids = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
         if self.centroid_dir != "":
@@ -545,24 +548,24 @@ class Detector:
         #    clusters[chartid] = old_new_mapping[clusterid]
 
         # reassign clusters
-        kmeans.reassign_charts(charts, clusters, centroids, self.km_threshold2)
+        #kmeans.reassign_charts(charts, clusters, centroids, self.km_threshold2)
 
         # get charts with clusterid = -1
-        clusters_0 = {chartid: clusterid for chartid, clusterid in clusters.items() if clusterid == -1}
-        if len(clusters_0) > 3:
-            # do kmeans again
-            clusters_0, centroids_0 = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
+        #clusters_0 = {chartid: clusterid for chartid, clusterid in clusters.items() if clusterid == -1}
+        #if len(clusters_0) > 3:
+        #    # do kmeans again
+        #    clusters_0, centroids_0 = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
 
-        if len(clusters_0) > 0:
-            max_clusterid = max(clusters.values())
-            # update clusters with clusters_0 starting from max_clusterid + 1
-            for chartid, clusterid in clusters_0.items():
-                clusters[chartid] = clusterid + max_clusterid + 1
+        #if len(clusters_0) > 0:
+        #    max_clusterid = max(clusters.values())
+        #    # update clusters with clusters_0 starting from max_clusterid + 1
+        #    for chartid, clusterid in clusters_0.items():
+        #        clusters[chartid] = clusterid + max_clusterid + 1
 
-            # update centroids with centroids_0
-            for chartid, clusterid in clusters.items():
-                if clusterid in centroids_0:
-                    centroids[chartid] = centroids_0[clusterid]
+        #    # update centroids with centroids_0
+        #    for chartid, clusterid in clusters.items():
+        #        if clusterid in centroids_0:
+        #            centroids[chartid] = centroids_0[clusterid]
 
         return clusters
 
@@ -630,10 +633,10 @@ class Detector:
 
         log(f"After detector.detect1_batch count: {len(anomaly_itemIds)}")
 
-        if len(anomaly_itemIds) == 0:
-            return None
+        #if len(anomaly_itemIds) == 0:
+        #    return None
         
-        if not skip_history_update:
+        if not skip_history_update and len(anomaly_itemIds) > 0:
             log(f"detector.update_history(anomaly_itemIds, base_clocks, {startep1})")
             itemIds_to_renew = ms.anomalies.get_itemids()
             itemIds_to_renew.extend(anomaly_itemIds)
@@ -694,18 +697,18 @@ class Detector:
 
         log(f"final count: {len(anomaly_itemIds2)}")
 
-        if len(anomaly_itemIds2) == 0:
-            return None
-
-        host_itemIds = dg.get_item_host_dict(anomaly_itemIds2)
+        #if len(anomaly_itemIds2) == 0:
+        #    return None
 
         clusters = {}
-        if len(anomaly_itemIds2) > 2:
-            if len(anomaly_itemIds2) < k:
+        all_anomaly_itemIds = ms.anomalies.get_itemids()
+        all_anomaly_itemIds.extend(anomaly_itemIds2)
+        if len(all_anomaly_itemIds) > 2:
+            if len(all_anomaly_itemIds) < k:
                 k = 2
 
             # get anomalies in the db
-            all_anomaly_itemIds = ms.anomalies.get_itemids()
+            #all_anomaly_itemIds = ms.anomalies.get_itemids()
             all_anomaly_itemIds.extend(anomaly_itemIds2)
             all_anomaly_itemIds = list(set(all_anomaly_itemIds))
 
@@ -717,6 +720,7 @@ class Detector:
         if len(anomaly_itemIds2) == 0:
             return None
 
+        host_itemIds = dg.get_item_host_dict(anomaly_itemIds2)
         # results in df with columns: itemId, hostId, host_name, item_name, clusterId, group_name
         target_itemIds = []
         hostIds = []
@@ -766,6 +770,45 @@ class Detector:
         clusters = self._classify_anomalies(all_anomaly_itemIds, epoch)
         ms.anomalies.update_clusterid(clusters)
 
+    def check_distance(self, itemId1, itemId2, endep=0):
+        ms = self.ms
+        dg = self.dg
+        if endep == 0:
+            endep = ms.anomalies.get_last_updated()
+
+        startep = endep - self.km_detection_period
+
+        itemIds = [itemId1, itemId2]
+        history_df = dg.get_history_data(startep=startep, endep=endep, itemIds=itemIds)
+        if history_df.empty:
+            return {}
+    
+        base_clocks = list(set(history_df["clock"].tolist()))
+        
+        # normalize history data so that max=1 and min=0
+        history_df['value'] = history_df.groupby('itemid')['value'].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
+
+        # fill na with 0
+        history_df['value'] = history_df['value'].fillna(0)
+
+        # convert df to charts: Dict[int, pd.Series]
+        charts = {}
+        for itemId in itemIds:
+            #charts[itemId] = history_df[history_df['itemid'] == itemId]['value'].reset_index(drop=True)
+            clocks = history_df[history_df['itemid'] == itemId]['clock'].tolist()
+            values = history_df[history_df['itemid'] == itemId]['value'].tolist()
+            if len(values) > 0:
+                values = normalizer.fit_to_base_clocks(base_clocks, clocks, values)
+                charts[itemId] = pd.Series(data=values)
+
+        if len(charts) < 2:
+            return {}
+
+        op_chart = 1 - charts[itemId1]
+        d = kmeans.calculate_distance(charts[itemId1], op_chart, charts[itemId2])
+        return d
+
+
 def detect(data_source: Dict, 
            t_startep: int, h_startep1: int, h_startep2: int, endep: int,
            base_clocks: List[int],
@@ -780,3 +823,8 @@ def detect(data_source: Dict,
 def update_anomalies(data_source: Dict, epoch=0):
     detector = Detector(data_source)
     detector.update_anomalies(epoch)
+
+def check_distance(data_source: Dict, itemId1, itemId2, endep=0):
+    detector = Detector(data_source)
+
+    return detector.check_distance(itemId1, itemId2, endep)

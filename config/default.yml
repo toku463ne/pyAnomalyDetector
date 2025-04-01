@@ -54,8 +54,8 @@ history_recent_retention: 6
 ##################################################
 kmeans:
   k: 10
-  threshold: 1
-  threshold2: 0.8
+  threshold: 0.01
+  threshold2: 0.01
   max_iterations: 10
   n_rounds: 10
   detection_period: 43200

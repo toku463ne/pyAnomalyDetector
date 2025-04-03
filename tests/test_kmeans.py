@@ -17,6 +17,13 @@ class TestKMeans(unittest.TestCase):
         self.assertEqual(len(clusters), 100)
         self.assertGreater(len(centroids), 10)
 
+        # remove cluster with cluster_id == -1
+        clusters = [c for c in clusters if c['cluster_id'] != -1]
+        charts = [c for c in charts if c['cluster_id'] != -1]
+
+        score = kmeans.evaluate_clusters(charts, clusters)
+        self.assertGreater(score, 0.5)
+
         kmeans.process_clusters(charts, clusters)
         kmeans.plot_clusters(charts, clusters)
 

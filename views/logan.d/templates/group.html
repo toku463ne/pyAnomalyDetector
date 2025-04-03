@@ -1,0 +1,98 @@
+<!--
+Templete for displaying a group of items.
+This template is used to display a group of items in a grid format.
+It includes a title, a description, and a grid of items.
+
+this template is used in the localweb.py file.
+The template is rendered with the following variables:
+- group_name: The name of the group.
+- group_description: The description of the group.
+- graphs: A list of graphs to be displayed in the grid.
+- data: A dictionary of dataframes, where the keys are item IDs and the values are dataframes.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ group_name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/script.js"></script>
+    <script src="/static/js/plotly-latest.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <h1>{{ group_name }}</h1>
+        <div class="tabs">
+            <ul class="tab-links">
+            {% for group, items in data.items() %}
+                <li><a href="#tab-{{ group }}">{{ group }}</a></li>
+            {% endfor %}
+            </ul>
+            <div class="tab-content">
+            {% for group, items in data.items() %}
+                <div id="tab-{{ group }}" class="tab">
+                <h2>{{ group }}</h2>
+                {% for item_id, df in items.items() %}
+                    <div id="graph-{{ item_id }}" class="graph-container">
+                        <h3>{{ item_id }}</h3>
+                        <div id="plot-{{ item_id }}"></div>
+                        <script>
+                            var data = {{ graphs[item_id] | tojson }};
+                            var layout = {
+                                title: '{{ item_id }}',
+                                xaxis: { title: 'X-axis' },
+                                yaxis: { title: 'Y-axis' }
+                            };
+                            Plotly.newPlot('plot-{{ item_id }}', data, layout);
+                        </script>
+                    </div>
+                {% endfor %}
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        <script>
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabLinks = document.querySelectorAll('.tab-links a');
+
+            tabLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = document.querySelector(link.getAttribute('href'));
+
+                // Hide all tabs
+                tabs.forEach(tab => tab.style.display = 'none');
+
+                // Remove active class from all links
+                tabLinks.forEach(link => link.classList.remove('active'));
+
+                // Show the target tab and set the active link
+                target.style.display = 'block';
+                link.classList.add('active');
+            });
+            });
+
+            // Show the first tab by default
+            if (tabs.length > 0) {
+            tabs[0].style.display = 'block';
+            tabLinks[0].classList.add('active');
+            }
+        </script>
+    </div>
+    <script>
+        // Add any additional JavaScript here
+        // For example, you can add event listeners or other functionality
+        // to enhance the interactivity of the grid items.
+        // Example: Adding a click event to each grid item
+        const gridItems = document.querySelectorAll('.grid-item');
+        gridItems.forEach(item => {
+            item.addEventListener('click', () => {
+                alert('You clicked on ' + item.querySelector('h2').innerText);
+            });
+        });
+    </script>
+</body>
+</html>

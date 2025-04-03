@@ -489,7 +489,8 @@ class Detector:
             
 
 
-    def _classify_anomalies(self, itemIds: List[int], endep: int) -> Dict[int, List[int]]:
+    def _classify_anomalies(self, itemIds: List[int], 
+                            base_clocks: List[int], endep: int) -> Dict[int, List[int]]:
         #ms = self.ms
         dg = self.dg
         k = self.k
@@ -525,7 +526,7 @@ class Detector:
             values = history_df[history_df['itemid'] == itemId]['value'].tolist()
             if len(values) > 0:
                 values = normalizer.fit_to_base_clocks(base_clocks, clocks, values)
-                charts[itemId] = pd.Series(data=values)
+                charts[itemId] = pd.Series(values)
 
         if len(charts) < 2:
             return {}
@@ -539,9 +540,11 @@ class Detector:
         # run kmeans
         clusters, centroids = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
         if self.centroid_dir != "":
-            filename = f"{self.centroid_dir}/{endep}.json.gz"
+            filename = f"{self.centroid_dir}/centroids_{endep}.json.gz"
             log(f"save centroids to {filename}")
             kmeans.save_centroids(centroids, filename=filename)
+
+        
 
         #centroids, old_new_mapping = kmeans.rearange_centroids(centroids, self.km_threshold2)
         #for chartid, clusterid in clusters.items():
@@ -714,7 +717,7 @@ class Detector:
 
             # classify anomaly_itemIds3 by kmeans
             log(f"detector.classify_anomalies(anomaly_itemIds2)")
-            clusters = self._classify_anomalies(all_anomaly_itemIds, endep)
+            clusters = self._classify_anomalies(all_anomaly_itemIds, base_clocks, endep)
                     
         groups_info = dg.classify_by_groups(anomaly_itemIds2, group_names)
         if len(anomaly_itemIds2) == 0:

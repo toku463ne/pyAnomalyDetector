@@ -5,11 +5,15 @@ import gzip
 import json
 from collections import OrderedDict as ordered_dict
 from typing import Dict, List, Tuple
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
+from sklearn.metrics import silhouette_score
+
 
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.spatial.distance import pdist, squareform
 from sklearn.decomposition import PCA
+import utils.normalizer as normalizer
 
 def calculate_distance(chart1: pd.Series, op_chart1: pd.Series, chart2: pd.Series) -> float:
     """
@@ -23,9 +27,11 @@ def calculate_distance(chart1: pd.Series, op_chart1: pd.Series, chart2: pd.Serie
     Returns:
         float: Euclidean distance between the two charts.
     """
-    d1 = np.linalg.norm(chart1 - chart2) / np.sqrt(len(chart1))
-    d2 = np.linalg.norm(op_chart1 - chart2) / np.sqrt(len(chart1))
-    return min(d1, d2)
+    d1 = np.linalg.norm(chart1 - chart2) 
+    d2 = np.linalg.norm(op_chart1 - chart2) 
+    return min(d1, d2) / np.sqrt(len(chart1))
+
+
 
 def initialize_centroids(charts: Dict[int, pd.Series], k: int) -> Dict[int, pd.Series]:
     """
@@ -106,17 +112,16 @@ def assign_clusters(charts: Dict[int, pd.Series],
     """
     clusters = {}
     chart_ids = list(charts.keys())
-    chart_data = np.array([charts[chart_id] for chart_id in chart_ids])
     centroid_ids = list(centroids.keys())
-    centroid_data = np.array([centroids[centroid_id] for centroid_id in centroid_ids])
-    #distances = []
-    #for chart_id in chart_ids:
-    #    diffs = []
-    #    for centroid_id in centroid_ids:
-    #        diffs.append(calculate_distance(charts[chart_id], op_charts[chart_id], centroids[centroid_id]))
-    #    distances.append(diffs)
-    #distances = np.array(distances)
-    distances = np.linalg.norm(chart_data[:, np.newaxis] - centroid_data, axis=2)
+    distances = []
+
+    for chart_id in chart_ids:
+        diffs = []
+        for centroid_id in centroid_ids:
+            diffs.append(calculate_distance(charts[chart_id], op_charts[chart_id], centroids[centroid_id]))
+        distances.append(diffs)
+
+    distances = np.array(distances)
     
 
     min_distances = np.min(distances, axis=1)
@@ -132,7 +137,9 @@ def assign_clusters(charts: Dict[int, pd.Series],
     return clusters
 
 def kmeans(charts: Dict[int, pd.Series], op_charts: Dict[int, pd.Series],
-           k: int, threshold: float, max_iterations: int) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
+           k: int, threshold: float, max_iterations: int) -> Tuple[Dict[int, int], 
+                                                                   Dict[int, pd.Series],
+                                                                   Dict[int, Dict]]:
     """
     Run KMeans clustering.
 
@@ -155,14 +162,35 @@ def kmeans(charts: Dict[int, pd.Series], op_charts: Dict[int, pd.Series],
         if clusters == new_clusters:
             break
         clusters = new_clusters
-    return clusters, centroids
+
+    cluster_members = {}
+    for chart_id, cluster_id in clusters.items():
+        if cluster_id not in cluster_members:
+            cluster_members[cluster_id] = []
+        cluster_members[cluster_id].append(chart_id)
+
+
+    # calculate the number of charts and average distance from the centroid
+    cluster_metrics = {}  # dict of clusterId to {number of charts, average distance, density}
+    for cluster_id in clusters.values():
+        if cluster_id not in cluster_metrics:
+            cluster_metrics[cluster_id] = {'num_charts': 0, 'avg_distance': 0}
+        cluster_metrics[cluster_id]['num_charts'] = len(cluster_members[cluster_id])
+        cluster_metrics[cluster_id]['avg_distance'] = 0
+        for chart_id in cluster_members[cluster_id]:
+            dist = calculate_distance(charts[chart_id], op_charts[chart_id], centroids[cluster_id])
+            cluster_metrics[cluster_id]['avg_distance'] += dist
+        cluster_metrics[cluster_id]['avg_distance'] /= len(cluster_members[cluster_id])
+    
+    return clusters, centroids, cluster_metrics
 
 def run_kmeans(
     charts: Dict[int, pd.Series],
     k: int,
     threshold: float,
     max_iterations: int,
-    n_rounds: int
+    n_rounds: int,
+    n_dissolve: int = 2,
 ) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
 
     """
@@ -181,6 +209,7 @@ def run_kmeans(
     best_clusters = None
     best_score = float('inf')
     best_centroids = None
+    best_metrics = None 
 
     # create the opposite of the charts
     op_charts = {}
@@ -189,12 +218,70 @@ def run_kmeans(
 
     
     for _ in range(n_rounds):
-        clusters, centroids = kmeans(charts, op_charts, k, threshold, max_iterations)
+        clusters, centroids, cluster_metrics = kmeans(charts, op_charts, k, threshold, max_iterations)
         score = len(centroids)
         if score < best_score:
             best_clusters = clusters
             best_score = score
-            best_centroids = centroids            
+            best_centroids = centroids
+            best_metrics = cluster_metrics
+
+    for _ in range(n_dissolve):
+        # Identify clusters with avg_distance > threshold
+        dissolve_clusters = []
+        for cluster_id, metrics in best_metrics.items():
+            if metrics['avg_distance'] > threshold or metrics['num_charts'] < 2:
+                dissolve_clusters.append(cluster_id)
+                # remove the cluster from the best_clusters
+                del best_clusters[cluster_id]
+                for chart_id in best_clusters:
+                    if best_clusters[chart_id] == cluster_id:
+                        best_clusters[chart_id] = -1
+                del best_centroids[cluster_id]
+                del best_metrics[cluster_id]
+
+        # Separate charts from the clusters to be dissolved
+        dissolve_charts = {}
+        for chart_id, cluster_id in best_clusters.items():
+            if cluster_id in dissolve_clusters:
+                dissolve_charts[chart_id] = charts[chart_id]
+
+        if len(dissolve_charts) > 2:  # Apply kmeans only if number of target charts is greater than 2
+            dissolve_op_charts = {chart_id: op_charts[chart_id] for chart_id in dissolve_charts}
+
+            # Run kmeans on the dissolved charts
+            dissolve_best_clusters = None
+            dissolve_best_score = float('inf')
+            dissolve_best_centroids = None
+            dissolve_best_metrics = None
+            for _ in range(n_rounds):
+                clusters, centroids, cluster_metrics = kmeans(dissolve_charts, dissolve_op_charts, k, threshold, max_iterations)
+                score = len(centroids)
+                if score < dissolve_best_score:
+                    dissolve_best_clusters = clusters
+                    dissolve_best_score = score
+                    dissolve_best_centroids = centroids
+                    dissolve_best_metrics = cluster_metrics
+
+            # Integrate the dissolved clusters back into the main clusters
+            for chart_id, cluster_id in dissolve_best_clusters.items():
+                if dissolve_best_metrics[cluster_id]['avg_distance'] < threshold and dissolve_best_metrics[cluster_id]['num_charts'] >= 2:
+                    best_clusters[chart_id] = cluster_id
+                    best_centroids[cluster_id] = dissolve_best_centroids[cluster_id]
+                    best_metrics[cluster_id] = dissolve_best_metrics[cluster_id]
+                else:
+                    # Assign cluster_id = -1 to charts that don't meet the threshold
+                    best_clusters[chart_id] = -1
+                    if -1 not in best_centroids:
+                        best_centroids[-1] = pd.Series(0, index=dissolve_best_centroids[cluster_id].index)
+                        best_metrics[-1] = {'num_charts': 0, 'avg_distance': 0}
+                    best_centroids[-1] += dissolve_best_centroids[cluster_id]
+                    best_metrics[-1]['num_charts'] += 1
+                    dist = calculate_distance(charts[chart_id], op_charts[chart_id], dissolve_best_centroids[cluster_id])
+                    best_metrics[-1]['avg_distance'] += dist
+
+            if -1 in best_metrics and best_metrics[-1]['num_charts'] > 0:
+                best_metrics[-1]['avg_distance'] /= best_metrics[-1]['num_charts']
 
     return best_clusters, best_centroids
 
@@ -306,6 +393,13 @@ def save_centroids(centroids, filename="centroids.json.gz"):
     with gzip.open(filename, 'wt', encoding='utf-8') as f:
         json.dump(centroids_dict, f)
 
+def save_cluster_metrics(cluster_metrics, filename="cluster_metrics.json.gz"):
+    """
+    Saves cluster metrics to a compressed JSON file.
+    """
+    with gzip.open(filename, 'wt', encoding='utf-8') as f:
+        json.dump(cluster_metrics, f)
+
 def load_centroids(filename="centroids.json.gz"):
     """
     Loads centroids from a compressed JSON file.
@@ -337,19 +431,14 @@ def load_csv_metrics(csv_path: str, base_clocks: List[int]) -> Dict[int, pd.Seri
 
     # Get unique chart ids
     chart_ids = data['itemid'].unique().astype(int).tolist()
-    for chart_id in chart_ids:
-        chart_data = data[data['itemid'] == chart_id]
-
-        # Interpolate missing values
-        chart_data = chart_data.set_index('clock').reindex(base_clocks)
-        chart_data = chart_data['value'].fillna(0).reset_index()
-
-        # normalize chart_data
-        avg = chart_data['value'].mean()
-        std = chart_data['value'].std()
-        chart_data['value'] = (chart_data['value'] - avg) / (2 * std)
-        chart_data['value'] = chart_data['value'].clip(0, 1)
-        charts[chart_id] = chart_data['value']
+    charts = {}
+    for itemId in chart_ids:
+        #charts[itemId] = history_df[history_df['itemid'] == itemId]['value'].reset_index(drop=True)
+        clocks = data[data['itemid'] == itemId]['clock'].tolist()
+        values = data[data['itemid'] == itemId]['value'].tolist()
+        if len(values) > 0:
+            values = normalizer.fit_to_base_clocks(base_clocks, clocks, values)
+            charts[itemId] = pd.Series(values)
 
     return charts
 
@@ -444,3 +533,22 @@ def plot_pca(centroids):
     plt.ylabel("Principal Component 2")
     plt.grid(True)
     plt.show()
+
+def evaluate_clusters(data: Dict[int, pd.Series], labels: Dict[int, int]) -> float:
+    """
+    Evaluate the quality of clusters using the Silhouette Score.
+
+    Parameters:
+        data (dict): Dictionary of itemId to chart data.
+        labels (dict): Dictionary of itemId to clusterId.
+
+    Returns:
+        float: Silhouette Score for the clustering.
+    """
+    # Convert data and labels to NumPy arrays
+    data_array = np.array([data[item_id].values for item_id in data.keys()])
+    label_array = np.array([labels[item_id] for item_id in data.keys()])
+    
+    # Compute Silhouette Score
+    score = silhouette_score(data_array, label_array, metric='euclidean')
+    return score

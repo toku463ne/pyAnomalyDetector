@@ -113,15 +113,15 @@ def assign_clusters(charts: Dict[int, pd.Series],
     clusters = {}
     chart_ids = list(charts.keys())
     centroid_ids = list(centroids.keys())
-    distances = []
-
-    for chart_id in chart_ids:
-        diffs = []
-        for centroid_id in centroid_ids:
-            diffs.append(calculate_distance(charts[chart_id], op_charts[chart_id], centroids[centroid_id]))
-        distances.append(diffs)
-
-    distances = np.array(distances)
+    centroid_data = np.array([centroids[centroid_id] for centroid_id in centroid_ids])
+    #distances = []
+    #for chart_id in chart_ids:
+    #    diffs = []
+    #    for centroid_id in centroid_ids:
+    #        diffs.append(calculate_distance(charts[chart_id], op_charts[chart_id], centroids[centroid_id]))
+    #    distances.append(diffs)
+    #distances = np.array(distances)
+    distances = np.linalg.norm(chart_data[:, np.newaxis] - centroid_data, axis=2)
     
 
     min_distances = np.min(distances, axis=1)

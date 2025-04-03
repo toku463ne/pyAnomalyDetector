@@ -551,7 +551,7 @@ class Detector:
         #    clusters[chartid] = old_new_mapping[clusterid]
 
         # reassign clusters
-        #kmeans.reassign_charts(charts, clusters, centroids, self.km_threshold2)
+        kmeans.reassign_charts(charts, clusters, centroids, self.km_threshold2)
 
         # get charts with clusterid = -1
         #clusters_0 = {chartid: clusterid for chartid, clusterid in clusters.items() if clusterid == -1}

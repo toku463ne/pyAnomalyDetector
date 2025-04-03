@@ -121,7 +121,11 @@ def assign_clusters(charts: Dict[int, pd.Series],
     #        diffs.append(calculate_distance(charts[chart_id], op_charts[chart_id], centroids[centroid_id]))
     #    distances.append(diffs)
     #distances = np.array(distances)
-    distances = np.linalg.norm(chart_data[:, np.newaxis] - centroid_data, axis=2)
+    distances = np.array([
+        [calculate_distance(charts[chart_id], op_charts[chart_id], centroids[centroid_id]) 
+         for centroid_id in centroid_ids] 
+        for chart_id in chart_ids
+    ])
     
 
     min_distances = np.min(distances, axis=1)
@@ -233,7 +237,10 @@ def run_kmeans(
             if metrics['avg_distance'] > threshold or metrics['num_charts'] < 2:
                 dissolve_clusters.append(cluster_id)
                 # remove the cluster from the best_clusters
-                del best_clusters[cluster_id]
+                # and assign the charts to cluster_id = -1
+                for chart_id, cluster_id in best_clusters.items():
+                    if cluster_id == cluster_id:
+                        best_clusters[chart_id] = -1
                 for chart_id in best_clusters:
                     if best_clusters[chart_id] == cluster_id:
                         best_clusters[chart_id] = -1

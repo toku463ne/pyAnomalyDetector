@@ -1,6 +1,7 @@
 
 
 import numpy as np # noqa
+import pandas as pd # noqa
 from typing import List
 
 """ get_base_clocks:
@@ -70,3 +71,21 @@ def fit_to_base_clocks(base_clocks: List[int], clocks: List[int], values: List[f
 
         return new_values.tolist()
 
+def normalize_metric_df(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normalize the metric data frame by scaling the values to a range of 0 to 1.
+
+    Args:
+        data (pd.DataFrame): The input data frame containing metric values.(itemid, clock, value)
+        The 'value' column will be normalized.
+        The 'itemid' column is used to group the data for normalization.
+        The 'clock' column is used to identify the time of the metric.
+    Returns:
+        pd.DataFrame: The normalized data frame.
+    """
+    # Normalize the values in the DataFrame
+    data['value'] = data.groupby('itemid')['value'].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
+
+    # fill NaN values with 0
+    data.fillna({"value": 0}, inplace=True)
+    return data

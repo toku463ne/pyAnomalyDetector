@@ -5,7 +5,6 @@ import gzip
 import json
 from collections import OrderedDict as ordered_dict
 from typing import Dict, List, Tuple
-from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 from sklearn.metrics import silhouette_score
 
@@ -113,7 +112,6 @@ def assign_clusters(charts: Dict[int, pd.Series],
     clusters = {}
     chart_ids = list(charts.keys())
     centroid_ids = list(centroids.keys())
-    centroid_data = np.array([centroids[centroid_id] for centroid_id in centroid_ids])
     #distances = []
     #for chart_id in chart_ids:
     #    diffs = []
@@ -223,73 +221,72 @@ def run_kmeans(
     
     for _ in range(n_rounds):
         clusters, centroids, cluster_metrics = kmeans(charts, op_charts, k, threshold, max_iterations)
-        score = len(centroids)
+        score = evaluate_clusters(charts, clusters)
         if score < best_score:
             best_clusters = clusters
             best_score = score
             best_centroids = centroids
             best_metrics = cluster_metrics
 
+    cluster_ids = list(best_metrics.keys())
     for _ in range(n_dissolve):
         # Identify clusters with avg_distance > threshold
-        dissolve_clusters = []
-        for cluster_id, metrics in best_metrics.items():
+        dissolve_charts = {}
+        for cluster_id in cluster_ids:
+            if cluster_id == -1:
+                continue
+            metrics = best_metrics[cluster_id]
+            # Check if the cluster should be dissolved
             if metrics['avg_distance'] > threshold or metrics['num_charts'] < 2:
-                dissolve_clusters.append(cluster_id)
                 # remove the cluster from the best_clusters
                 # and assign the charts to cluster_id = -1
-                for chart_id, cluster_id in best_clusters.items():
-                    if cluster_id == cluster_id:
-                        best_clusters[chart_id] = -1
-                for chart_id in best_clusters:
-                    if best_clusters[chart_id] == cluster_id:
+                for chart_id, cluster_id2 in best_clusters.items():
+                    if cluster_id == cluster_id2:
+                        dissolve_charts[chart_id] = charts[chart_id]
                         best_clusters[chart_id] = -1
                 del best_centroids[cluster_id]
                 del best_metrics[cluster_id]
 
-        # Separate charts from the clusters to be dissolved
-        dissolve_charts = {}
-        for chart_id, cluster_id in best_clusters.items():
-            if cluster_id in dissolve_clusters:
-                dissolve_charts[chart_id] = charts[chart_id]
-
-        if len(dissolve_charts) > 2:  # Apply kmeans only if number of target charts is greater than 2
-            dissolve_op_charts = {chart_id: op_charts[chart_id] for chart_id in dissolve_charts}
-
-            # Run kmeans on the dissolved charts
-            dissolve_best_clusters = None
-            dissolve_best_score = float('inf')
-            dissolve_best_centroids = None
-            dissolve_best_metrics = None
-            for _ in range(n_rounds):
-                clusters, centroids, cluster_metrics = kmeans(dissolve_charts, dissolve_op_charts, k, threshold, max_iterations)
-                score = len(centroids)
-                if score < dissolve_best_score:
-                    dissolve_best_clusters = clusters
-                    dissolve_best_score = score
-                    dissolve_best_centroids = centroids
-                    dissolve_best_metrics = cluster_metrics
-
-            # Integrate the dissolved clusters back into the main clusters
-            for chart_id, cluster_id in dissolve_best_clusters.items():
-                if dissolve_best_metrics[cluster_id]['avg_distance'] < threshold and dissolve_best_metrics[cluster_id]['num_charts'] >= 2:
+        
+        # calculate the distance of dissolve_charts to the centroids again and check if the distance is less than the threshold
+        for chart_id in dissolve_charts.keys():
+            for cluster_id in best_centroids.keys():
+                dist = calculate_distance(charts[chart_id], op_charts[chart_id], best_centroids[cluster_id])
+                if dist < threshold:
+                    # assign the dissolved chart to the cluster
                     best_clusters[chart_id] = cluster_id
-                    best_centroids[cluster_id] = dissolve_best_centroids[cluster_id]
-                    best_metrics[cluster_id] = dissolve_best_metrics[cluster_id]
-                else:
-                    # Assign cluster_id = -1 to charts that don't meet the threshold
-                    best_clusters[chart_id] = -1
-                    if -1 not in best_centroids:
-                        best_centroids[-1] = pd.Series(0, index=dissolve_best_centroids[cluster_id].index)
-                        best_metrics[-1] = {'num_charts': 0, 'avg_distance': 0}
-                    best_centroids[-1] += dissolve_best_centroids[cluster_id]
-                    best_metrics[-1]['num_charts'] += 1
-                    dist = calculate_distance(charts[chart_id], op_charts[chart_id], dissolve_best_centroids[cluster_id])
-                    best_metrics[-1]['avg_distance'] += dist
+                    n = best_metrics[cluster_id]['num_charts']
+                    curr_avg = best_metrics[cluster_id]['avg_distance']
+                    best_metrics[cluster_id]['avg_distance'] = (curr_avg * n + dist) / (n + 1)
+                    best_metrics[cluster_id]['num_charts'] += 1
+                    break
 
-            if -1 in best_metrics and best_metrics[-1]['num_charts'] > 0:
-                best_metrics[-1]['avg_distance'] /= best_metrics[-1]['num_charts']
+        if len(dissolve_charts) <= 2:  # Apply kmeans only if number of target charts is greater than 2
+            break
+        dissolve_op_charts = {chart_id: op_charts[chart_id] for chart_id in dissolve_charts}
 
+        # Run kmeans on the dissolved charts
+        dissolve_best_clusters = None
+        dissolve_best_score = float('inf')
+        dissolve_best_metrics = None
+        for _ in range(n_rounds):
+            clusters, centroids, cluster_metrics = kmeans(dissolve_charts, dissolve_op_charts, k, threshold, max_iterations)
+            score = evaluate_clusters(dissolve_charts, clusters)
+            if score < dissolve_best_score:
+                dissolve_best_clusters = clusters
+                dissolve_best_score = score
+                dissolve_best_metrics = cluster_metrics
+
+        max_cluster_id = max(best_centroids.keys())
+        # Integrate the dissolved clusters back into the main clusters
+        for chart_id, cluster_id in dissolve_best_clusters.items():
+            new_cluster_id = max_cluster_id + cluster_id + 1
+            best_centroids[new_cluster_id] = dissolve_charts[chart_id]
+            best_metrics[new_cluster_id] = dissolve_best_metrics[cluster_id]
+            for chart_id2, cluster_id2 in best_clusters.items():
+                if cluster_id == cluster_id2:
+                    best_clusters[chart_id2] = new_cluster_id
+                    
     return best_clusters, best_centroids
 
 # Rearange the centroids and assign the charts to the new centroid
@@ -433,6 +430,7 @@ def load_csv_metrics(csv_path: str, base_clocks: List[int]) -> Dict[int, pd.Seri
     data = pd.read_csv(csv_path, header=None, names=['itemid', 'clock', 'value'])
     data = data.sort_values(['itemid', 'clock'])
     data['value'] = data['value'].astype(float)
+    data = normalizer.normalize_metric_df(data)
 
     charts = {}
 
@@ -446,6 +444,7 @@ def load_csv_metrics(csv_path: str, base_clocks: List[int]) -> Dict[int, pd.Seri
         if len(values) > 0:
             values = normalizer.fit_to_base_clocks(base_clocks, clocks, values)
             charts[itemId] = pd.Series(values)
+            # normalize charts[itemId] 
 
     return charts
 

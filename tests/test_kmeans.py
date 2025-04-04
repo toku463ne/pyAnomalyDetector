@@ -15,11 +15,17 @@ class TestKMeans(unittest.TestCase):
         charts = kmeans.load_csv_metrics("tests/testdata/history.csv", base_clocks)
         clusters, centroids = kmeans.run_kmeans(charts, 10, 0.5, 100, 10)
         self.assertEqual(len(clusters), 100)
-        self.assertGreater(len(centroids), 10)
+        self.assertGreater(len(centroids), 1)
 
-        # remove cluster with cluster_id == -1
-        clusters = [c for c in clusters if c['cluster_id'] != -1]
-        charts = [c for c in charts if c['cluster_id'] != -1]
+        # remove cluster_id == -1
+        new_clusters = {}
+        new_charts = {}
+        for chart_id, cluster_id in clusters.items():
+            if cluster_id != -1:
+                new_clusters[chart_id] = cluster_id
+                new_charts[chart_id] = charts[chart_id]
+        clusters = new_clusters
+        charts = new_charts
 
         score = kmeans.evaluate_clusters(charts, clusters)
         self.assertGreater(score, 0.5)

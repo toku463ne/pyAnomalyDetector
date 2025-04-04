@@ -789,10 +789,7 @@ class Detector:
         base_clocks = list(set(history_df["clock"].tolist()))
         
         # normalize history data so that max=1 and min=0
-        history_df['value'] = history_df.groupby('itemid')['value'].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
-
-        # fill na with 0
-        history_df['value'] = history_df['value'].fillna(0)
+        history_df = normalizer.normalize_metric_df(history_df)
 
         # convert df to charts: Dict[int, pd.Series]
         charts = {}

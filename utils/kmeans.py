@@ -261,6 +261,7 @@ def run_kmeans(
                     best_metrics[cluster_id]['num_charts'] += 1
                     break
 
+        
         if len(dissolve_charts) <= 2:  # Apply kmeans only if number of target charts is greater than 2
             break
         dissolve_op_charts = {chart_id: op_charts[chart_id] for chart_id in dissolve_charts}
@@ -286,7 +287,7 @@ def run_kmeans(
             for chart_id2, cluster_id2 in best_clusters.items():
                 if cluster_id == cluster_id2:
                     best_clusters[chart_id2] = new_cluster_id
-                    
+              
     return best_clusters, best_centroids
 
 # Rearange the centroids and assign the charts to the new centroid
@@ -412,7 +413,7 @@ def load_centroids(filename="centroids.json.gz"):
         centroids_dict = json.load(f)
     return {int(key): pd.Series(value) for key, value in centroids_dict.items()}
 
-def load_csv_metrics(csv_path: str, base_clocks: List[int]) -> Dict[int, pd.Series]:
+def load_csv_metrics(csv_path: str, base_clocks: List[int], chart_ids: List[int] = []) -> Dict[int, pd.Series]:
     """
     Load metrics data from a CSV file.
     CSV file should have the following columns:
@@ -435,7 +436,8 @@ def load_csv_metrics(csv_path: str, base_clocks: List[int]) -> Dict[int, pd.Seri
     charts = {}
 
     # Get unique chart ids
-    chart_ids = data['itemid'].unique().astype(int).tolist()
+    if len(chart_ids) == 0:
+        chart_ids = data['itemid'].unique().astype(int).tolist()
     charts = {}
     for itemId in chart_ids:
         #charts[itemId] = history_df[history_df['itemid'] == itemId]['value'].reset_index(drop=True)

@@ -7,7 +7,8 @@ import utils
 import utils.config_loader as config_loader
 import data_getter
 from models.models_set import ModelsSet
-import utils.kmeans as kmeans
+#import utils.kmeans as kmeans
+import utils.classifiers as classifiers
 import utils.normalizer as normalizer
 
 
@@ -493,7 +494,7 @@ class Detector:
                             base_clocks: List[int], endep: int) -> Dict[int, List[int]]:
         #ms = self.ms
         dg = self.dg
-        k = self.k
+        #k = self.k
         if len(itemIds) < 2:    
             return {}
 
@@ -503,7 +504,7 @@ class Detector:
             k = 2
         threshold = self.km_threshold
         max_iterations = self.max_iterations
-        n_rounds = self.n_rounds
+        #n_rounds = self.n_rounds
         # get history data
         #history_df = ms.history.get_data(itemIds)
         history_df = dg.get_history_data(startep=startep, endep=endep, itemIds=itemIds)
@@ -531,14 +532,14 @@ class Detector:
         if len(charts) < 2:
             return {}
 
-        if k >= len(charts):
-            k = 2
+        #if k >= len(charts):
+        #    k = 2
 
-        if len(charts)/2 < k:
-            k = int(len(charts)/2)
+        #if len(charts)/2 < k:
+        #    k = int(len(charts)/2)
 
         # run kmeans
-        clusters, centroids = kmeans.run_kmeans(charts, k, threshold, max_iterations, n_rounds)
+        clusters, centroids = classifiers.run_kmeans(charts, threshold, max_iterations)
         if self.centroid_dir != "":
             filename = f"{self.centroid_dir}/centroids_{endep}.json.gz"
             log(f"save centroids to {filename}")
@@ -551,7 +552,7 @@ class Detector:
         #    clusters[chartid] = old_new_mapping[clusterid]
 
         # reassign clusters
-        kmeans.reassign_charts(charts, clusters, centroids, self.km_threshold2)
+        #kmeans.reassign_charts(charts, clusters, centroids, self.km_threshold2)
 
         # get charts with clusterid = -1
         #clusters_0 = {chartid: clusterid for chartid, clusterid in clusters.items() if clusterid == -1}

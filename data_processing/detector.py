@@ -531,6 +531,8 @@ class Detector:
 
         if len(charts) < 2:
             return {}
+        
+        chart_stats = normalizer.get_chart_stats(history_df, itemIds) 
 
         #if k >= len(charts):
         #    k = 2
@@ -539,13 +541,16 @@ class Detector:
         #    k = int(len(charts)/2)
 
         # run kmeans
-        clusters, centroids = classifiers.run_kmeans(charts, threshold, max_iterations)
+        clusters, centroids = classifiers.run_dbscan(charts, chart_stats, eps=threshold, min_samples=2)
         if self.centroid_dir != "":
             filename = f"{self.centroid_dir}/centroids_{endep}.json.gz"
             log(f"save centroids to {filename}")
             classifiers.save_centroids(centroids, filename=filename)
 
-        
+        # assing -1 to charts not included in clusters
+        for chartid in charts.keys():
+            if chartid not in clusters:
+                clusters[chartid] = -1
 
         #centroids, old_new_mapping = kmeans.rearange_centroids(centroids, self.km_threshold2)
         #for chartid, clusterid in clusters.items():

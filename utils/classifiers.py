@@ -20,9 +20,12 @@ import pandas as pd
 
 def run_dbscan(
     charts: Dict[int, pd.Series],
+    chart_stats: Dict[int, pd.Series],
+    alpha: float = 0.7,
+    sigma: float = 3.0,
     eps: float = 0.5,
-    min_samples: int = 5,
-) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
+    min_samples: int = 2,
+) -> Tuple[Dict[int, int], Dict[int, pd.Series], Dict[int, pd.Series]]:
     """
     Classify charts using DBSCAN with Correlation Distance.
 
@@ -34,19 +37,21 @@ def run_dbscan(
     Returns:
         Tuple[Dict[int, int], Dict[int, pd.Series]]: Clusters and centroids.
     """
+    # isolate charts with std = 0
+    charts = {chart_id: chart for chart_id, chart in charts.items() if chart.std() > 0}
+    distance_matrix = compute_combined_distance_matrix(charts, chart_stats, alpha=alpha, sigma=sigma)
+    # Ensure the distance matrix values are normalized between 0 and 1
+    distance_matrix = (distance_matrix - distance_matrix.min().min()) / (distance_matrix.max().max() - distance_matrix.min().min())
+    
     # Convert chart data to a NumPy array
     data = np.array([chart.values for chart in charts.values()])
-
-    # Compute pairwise correlation distances
-    try:
-        distance_matrix = squareform(pdist(data, metric='correlation'))
-    except ValueError as e:
-        raise ValueError("Error computing the distance matrix. Ensure the input data is valid and non-empty.") from e
 
     # Run DBSCAN with precomputed distance matrix
     db = DBSCAN(eps=eps, min_samples=min_samples, metric='precomputed').fit(distance_matrix)
 
     # Extract clusters
+    if all(label == -1 for label in db.labels_):
+        raise ValueError("DBSCAN failed to assign clusters. Consider increasing the 'eps' parameter or inspecting the distance matrix.")
     clusters = {chart_id: db.labels_[i] for i, chart_id in enumerate(charts.keys())}
 
     # Extract centroids (mean of points in each cluster)
@@ -57,7 +62,7 @@ def run_dbscan(
         cluster_points = data[np.array(list(clusters.values())) == cluster_id]
         centroids[cluster_id] = np.mean(cluster_points, axis=0)
 
-    return clusters, centroids
+    return clusters, centroids, charts
 
 
 def run_optics(
@@ -95,25 +100,25 @@ def run_optics(
     return clusters, centroids
 
 
-def calculate_k(charts: Dict[int, pd.Series], threshold: float) -> int:
+def calculate_k(charts: Dict[int, pd.Series], distance_matrix: pd.DataFrame, threshold: float) -> int:
     """
     Calculate the number of clusters using determined distance threshold.
     """
     assigned_chart_ids = set()
     n_groups = 0
 
-    for chart_id, chart in charts.items():
+    for chart_id in charts.keys():
         if chart_id in assigned_chart_ids:
             continue
 
         n_groups += 1
         assigned_chart_ids.add(chart_id)
 
-        for other_chart_id, other_chart in charts.items():
+        for other_chart_id in charts.keys():
             if other_chart_id in assigned_chart_ids:
                 continue
 
-            distance = pdist([chart.values, other_chart.values], metric='correlation')[0]
+            distance = distance_matrix.loc[chart_id, other_chart_id]
             if distance < threshold:
                 assigned_chart_ids.add(other_chart_id)
     return n_groups
@@ -127,9 +132,13 @@ def run_kmeans(
     max_iterations: int,
     alpha: float = 0.7,
     sigma: float = 3.0,
-) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
+) -> Tuple[Dict[int, int], Dict[int, pd.Series], Dict[int, pd.Series]]:
+    
+    # isolate charts with std = 0
+    charts = {chart_id: chart for chart_id, chart in charts.items() if chart.std() > 0}
 
-    k = calculate_k(charts, threshold)
+    distance_matrix = compute_combined_distance_matrix(charts, chart_stats, alpha=alpha, sigma=sigma)
+    k = calculate_k(charts, distance_matrix, threshold)
     if k == 0:
         return {}, {}
     if k == 1:
@@ -139,7 +148,6 @@ def run_kmeans(
     km = KMeans(n_clusters=k, max_iter=max_iterations, tol=1e-4, random_state=42, algorithm='lloyd')
     #distance_matrix = squareform(pdist(data, metric='correlation'))
     #distance_matrix = np.nan_to_num(distance_matrix, nan=0.0)
-    distance_matrix = compute_combined_distance_matrix(charts, chart_stats, alpha=alpha, sigma=sigma)
     # Fit the KMeans model
     km.fit(distance_matrix)
 
@@ -147,8 +155,38 @@ def run_kmeans(
     clusters = {chart_id: km.labels_[i] for i, chart_id in enumerate(charts.keys())}
     centroids = {i: centroid for i, centroid in enumerate(km.cluster_centers_)}
 
-    return clusters, centroids
+    return clusters, centroids, charts
 
+def reassign_charts(charts: Dict[int, pd.Series], 
+                    clusters: Dict[int, int], 
+                    centroids: Dict[int, pd.Series],
+                    threshold: float) -> Dict[int, int]:
+    """
+    check all charts and calculate the distance to the centroids and if the distance is less than the threshold
+    then assign the chart to the cluster with clusterid = -1 
+    """
+    for chart_id, cluster_id in clusters.items():
+        if cluster_id == -1:
+            continue
+        dist = correlation_distance(charts[chart_id], centroids[cluster_id])
+        if dist < threshold:
+            clusters[chart_id] = -1
+
+    # check if charts in clusterid = -1 belong to other clusters
+    for chart_id, cluster_id in clusters.items():
+        if cluster_id != -1:
+            continue
+        min_dist = float('inf')
+        min_cluster_id = -1
+        for centroid_id, centroid in centroids.items():
+            dist = correlation_distance(charts[chart_id], centroid)
+            if dist < min_dist and dist < threshold:
+                min_dist = dist
+                min_cluster_id = centroid_id
+        clusters[chart_id] = min_cluster_id
+
+    return clusters
+   
 
 
 def calculate_distance(chart1: pd.Series, op_chart1: pd.Series, chart2: pd.Series) -> float:
@@ -174,7 +212,10 @@ def compute_anomaly_indicators(charts: dict, charts_stats: dict, z_thresh: float
     for itemid, series in charts.items():
         z_mean = charts_stats[itemid]['mean']
         z_std = charts_stats[itemid]['std']
-        z = (series - z_mean) / z_std
+        if z_std == 0:
+            z = 0
+        else:
+            z = (series - z_mean) / z_std
         indicators[itemid] = (z.abs() > z_thresh).astype(int)
     return indicators
 
@@ -186,9 +227,16 @@ def jaccard_distance(a: pd.Series, b: pd.Series) -> float:
 
 def correlation_distance(a: pd.Series, b: pd.Series) -> float:
     """Compute 1 - Pearson correlation between two time series"""
-    if a.std() == 0 or b.std() == 0:
-        return 1.0  # avoid division by zero
+    astd = a.std()
+    bstd = b.std()
+    if astd == 0 and bstd == 0:
+        return 0.0
+    elif astd == 0:
+        return np.log1p(bstd)
+    elif bstd == 0:
+        return np.log1p(astd)
     return 1 - a.corr(b)
+
 
 def compute_combined_distance_matrix(charts: dict, chart_stats: dict, 
                                      alpha: float = 0.7,

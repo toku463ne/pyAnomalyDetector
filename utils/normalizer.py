@@ -93,6 +93,8 @@ def normalize_metric_df(data: pd.DataFrame) -> pd.DataFrame:
 def df2charts(df: pd.DataFrame, 
               itemIds: List[int]) -> Tuple[Dict[int, pd.Series], List[int]]:
     base_clocks = list(set(df["clock"].tolist()))
+    # sort the base clocks
+    base_clocks.sort()
     charts = {}
     for itemId in itemIds:
         #charts[itemId] = history_df[history_df['itemid'] == itemId]['value'].reset_index(drop=True)

@@ -11,6 +11,7 @@ from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
 import utils.normalizer as normalizer
 from sklearn.cluster import OPTICS
+from itertools import combinations
 
 from scipy.spatial.distance import pdist, squareform, correlation
 from typing import Dict, Tuple
@@ -131,10 +132,11 @@ def run_kmeans(
     if k == 1:
         return {chart_id: 0 for chart_id in charts.keys()}, {0: charts[list(charts.keys())[0]]}
 
-    data = np.array([list(chart) for chart in charts.values()])
+    #data = np.array([list(chart) for chart in charts.values()])
     km = KMeans(n_clusters=k, max_iter=max_iterations, tol=1e-4, random_state=42, algorithm='lloyd')
-    distance_matrix = squareform(pdist(data, metric='correlation'))
-    distance_matrix = np.nan_to_num(distance_matrix, nan=0.0)
+    #distance_matrix = squareform(pdist(data, metric='correlation'))
+    #distance_matrix = np.nan_to_num(distance_matrix, nan=0.0)
+    distance_matrix = compute_combined_distance_matrix(charts, alpha=0.7)
     # Fit the KMeans model
     km.fit(distance_matrix)
 
@@ -159,6 +161,50 @@ def calculate_distance(chart1: pd.Series, op_chart1: pd.Series, chart2: pd.Serie
     d1 = np.linalg.norm(chart1 - chart2) 
     d2 = np.linalg.norm(op_chart1 - chart2) 
     return min(d1, d2) / np.sqrt(len(chart1))
+
+
+def compute_anomaly_indicators(charts: dict, z_thresh: float = 3.0) -> dict:
+    """Returns {itemid: binary anomaly indicator (0/1 Series)}"""
+    indicators = {}
+    for itemid, series in charts.items():
+        z = (series - series.mean()) / series.std()
+        indicators[itemid] = (z.abs() > z_thresh).astype(int)
+    return indicators
+
+def jaccard_distance(a: pd.Series, b: pd.Series) -> float:
+    """Compute Jaccard distance between two binary pd.Series"""
+    intersection = ((a == 1) & (b == 1)).sum()
+    union = ((a == 1) | (b == 1)).sum()
+    return 1.0 if union == 0 else 1 - intersection / union
+
+def correlation_distance(a: pd.Series, b: pd.Series) -> float:
+    """Compute 1 - Pearson correlation between two time series"""
+    if a.std() == 0 or b.std() == 0:
+        return 1.0  # avoid division by zero
+    return 1 - a.corr(b)
+
+def compute_combined_distance_matrix(charts: dict, alpha: float = 0.7) -> pd.DataFrame:
+    itemids = list(charts.keys())
+    N = len(itemids)
+
+    # Step 1: Precompute anomaly indicators
+    indicators = compute_anomaly_indicators(charts)
+
+    # Step 2: Initialize distance matrix
+    dist_matrix = np.zeros((N, N))
+
+    for i, j in combinations(range(N), 2):
+        id_i, id_j = itemids[i], itemids[j]
+        s_i, s_j = charts[id_i], charts[id_j]
+        a_i, a_j = indicators[id_i], indicators[id_j]
+
+        d_time = jaccard_distance(a_i, a_j)
+        d_shape = correlation_distance(s_i, s_j)
+        combined = alpha * d_time + (1 - alpha) * d_shape
+
+        dist_matrix[i, j] = dist_matrix[j, i] = combined
+
+    return pd.DataFrame(dist_matrix, index=itemids, columns=itemids)
 
 
 def save_centroids(centroids, filename="centroids.json.gz"):
@@ -199,7 +245,11 @@ def load_csv_metrics(csv_path: str, base_clocks: List[int], chart_ids: List[int]
     Returns:
         dict: Dictionary of itemId to chart data.
     """
-    data = pd.read_csv(csv_path, header=None, names=['itemid', 'clock', 'value'])
+    if csv_path.endswith('.gz'):
+        with gzip.open(csv_path, 'rt', encoding='utf-8') as f:
+            data = pd.read_csv(f)
+    else:
+        data = pd.read_csv(csv_path, header=None, names=['itemid', 'clock', 'value'])
     data = data.sort_values(['itemid', 'clock'])
     data['value'] = data['value'].astype(float)
     data = normalizer.normalize_metric_df(data)

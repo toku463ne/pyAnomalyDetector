@@ -514,7 +514,7 @@ class Detector:
         base_clocks = list(set(history_df["clock"].tolist()))
         
         # normalize history data so that max=1 and min=0
-        history_df['value'] = history_df.groupby('itemid')['value'].transform(lambda x: (x - x.min()) / (x.max() - x.min()))
+        history_df = normalizer.normalize_metric_df(history_df)
 
         # fill na with 0
         history_df['value'] = history_df['value'].fillna(0)
@@ -543,7 +543,7 @@ class Detector:
         if self.centroid_dir != "":
             filename = f"{self.centroid_dir}/centroids_{endep}.json.gz"
             log(f"save centroids to {filename}")
-            kmeans.save_centroids(centroids, filename=filename)
+            classifiers.save_centroids(centroids, filename=filename)
 
         
 
@@ -806,7 +806,7 @@ class Detector:
             return {}
 
         op_chart = 1 - charts[itemId1]
-        d = kmeans.calculate_distance(charts[itemId1], op_chart, charts[itemId2])
+        d = classifiers.calculate_distance(charts[itemId1], op_chart, charts[itemId2])
         return d
 
 

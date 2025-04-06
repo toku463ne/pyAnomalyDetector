@@ -500,8 +500,8 @@ class Detector:
 
         startep = endep - self.km_detection_period
 
-        if k >= len(itemIds):
-            k = 2
+        #if k >= len(itemIds):
+        #    k = 2
         threshold = self.km_threshold
         max_iterations = self.max_iterations
         #n_rounds = self.n_rounds
@@ -541,7 +541,7 @@ class Detector:
         #    k = int(len(charts)/2)
 
         # run kmeans
-        clusters, centroids = classifiers.run_dbscan(charts, chart_stats, eps=threshold, min_samples=2)
+        clusters, centroids, _ = classifiers.run_dbscan(charts, chart_stats, threshold=threshold, min_samples=2)
         if self.centroid_dir != "":
             filename = f"{self.centroid_dir}/centroids_{endep}.json.gz"
             log(f"save centroids to {filename}")

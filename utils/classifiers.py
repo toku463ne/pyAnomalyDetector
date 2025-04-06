@@ -23,7 +23,7 @@ def run_dbscan(
     chart_stats: Dict[int, pd.Series],
     alpha: float = 0.7,
     sigma: float = 3.0,
-    eps: float = 0.5,
+    threshold: float = 0.5,
     min_samples: int = 2,
 ) -> Tuple[Dict[int, int], Dict[int, pd.Series], Dict[int, pd.Series]]:
     """
@@ -40,8 +40,12 @@ def run_dbscan(
     # isolate charts with std = 0
     charts = {chart_id: chart for chart_id, chart in charts.items() if chart.std() > 0}
     distance_matrix = compute_combined_distance_matrix(charts, chart_stats, alpha=alpha, sigma=sigma)
+    matrix_size = (distance_matrix.max().max() - distance_matrix.min().min())
+    # 1:eps = matrix_size:threshold
+    eps = threshold / matrix_size
     # Ensure the distance matrix values are normalized between 0 and 1
-    distance_matrix = (distance_matrix - distance_matrix.min().min()) / (distance_matrix.max().max() - distance_matrix.min().min())
+    if matrix_size > 0:
+        distance_matrix = (distance_matrix - distance_matrix.min().min()) / matrix_size
     
     # Convert chart data to a NumPy array
     data = np.array([chart.values for chart in charts.values()])

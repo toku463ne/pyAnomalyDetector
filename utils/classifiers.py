@@ -21,9 +21,9 @@ import pandas as pd
 def run_dbscan(
     charts: Dict[int, pd.Series],
     chart_stats: Dict[int, pd.Series],
-    alpha: float = 0.7,
+    alpha: float = 0.2,
     sigma: float = 3.0,
-    threshold: float = 0.5,
+    threshold: float = 0.3,
     min_samples: int = 2,
 ) -> Tuple[Dict[int, int], Dict[int, pd.Series], Dict[int, pd.Series]]:
     """
@@ -243,7 +243,7 @@ def correlation_distance(a: pd.Series, b: pd.Series) -> float:
 
 
 def compute_combined_distance_matrix(charts: dict, chart_stats: dict, 
-                                     alpha: float = 0.7,
+                                     alpha: float = 0.2,
                                      sigma: float = 3.0) -> pd.DataFrame:
     itemids = list(charts.keys())
     N = len(itemids)

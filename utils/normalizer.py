@@ -2,7 +2,7 @@
 
 import numpy as np # noqa
 import pandas as pd # noqa
-from typing import List
+from typing import List, Tuple, Dict
 
 """ get_base_clocks:
 Generates a list of base clocks based on the given start and end epochs and the unit seconds.
@@ -89,3 +89,30 @@ def normalize_metric_df(data: pd.DataFrame) -> pd.DataFrame:
     # fill NaN values with 0
     data.fillna({"value": 0}, inplace=True)
     return data
+
+def df2charts(df: pd.DataFrame, 
+              itemIds: List[int]) -> Tuple[Dict[int, pd.Series], List[int]]:
+    base_clocks = list(set(df["clock"].tolist()))
+    charts = {}
+    for itemId in itemIds:
+        #charts[itemId] = history_df[history_df['itemid'] == itemId]['value'].reset_index(drop=True)
+        clocks = df[df['itemid'] == itemId]['clock'].tolist()
+        values = df[df['itemid'] == itemId]['value'].tolist()
+        if len(values) > 0:
+            values = fit_to_base_clocks(base_clocks, clocks, values)
+            charts[itemId] = pd.Series(values)
+    return charts, base_clocks
+
+def get_chart_stats(df: pd.DataFrame, itemIds: List[int]) -> Dict[int, Dict[str, float]]:
+    stats = {}
+    for itemId in itemIds:
+        #stats[itemId] = history_df[history_df['itemid'] == itemId]['value'].reset_index(drop=True)
+        values = df[df['itemid'] == itemId]['value'].tolist()
+        if len(values) > 0:
+            stats[itemId] = {
+                'min': min(values),
+                'max': max(values),
+                'mean': np.mean(values),
+                'std': np.std(values)
+            }
+    return stats

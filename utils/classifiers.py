@@ -122,8 +122,11 @@ def calculate_k(charts: Dict[int, pd.Series], threshold: float) -> int:
 
 def run_kmeans(
     charts: Dict[int, pd.Series],
+    chart_stats: Dict[int, pd.Series],
     threshold: float,
     max_iterations: int,
+    alpha: float = 0.7,
+    sigma: float = 3.0,
 ) -> Tuple[Dict[int, int], Dict[int, pd.Series]]:
 
     k = calculate_k(charts, threshold)
@@ -136,7 +139,7 @@ def run_kmeans(
     km = KMeans(n_clusters=k, max_iter=max_iterations, tol=1e-4, random_state=42, algorithm='lloyd')
     #distance_matrix = squareform(pdist(data, metric='correlation'))
     #distance_matrix = np.nan_to_num(distance_matrix, nan=0.0)
-    distance_matrix = compute_combined_distance_matrix(charts, alpha=0.7)
+    distance_matrix = compute_combined_distance_matrix(charts, chart_stats, alpha=alpha, sigma=sigma)
     # Fit the KMeans model
     km.fit(distance_matrix)
 
@@ -145,6 +148,8 @@ def run_kmeans(
     centroids = {i: centroid for i, centroid in enumerate(km.cluster_centers_)}
 
     return clusters, centroids
+
+
 
 def calculate_distance(chart1: pd.Series, op_chart1: pd.Series, chart2: pd.Series) -> float:
     """
@@ -163,11 +168,13 @@ def calculate_distance(chart1: pd.Series, op_chart1: pd.Series, chart2: pd.Serie
     return min(d1, d2) / np.sqrt(len(chart1))
 
 
-def compute_anomaly_indicators(charts: dict, z_thresh: float = 3.0) -> dict:
+def compute_anomaly_indicators(charts: dict, charts_stats: dict, z_thresh: float = 3.0) -> dict:
     """Returns {itemid: binary anomaly indicator (0/1 Series)}"""
     indicators = {}
     for itemid, series in charts.items():
-        z = (series - series.mean()) / series.std()
+        z_mean = charts_stats[itemid]['mean']
+        z_std = charts_stats[itemid]['std']
+        z = (series - z_mean) / z_std
         indicators[itemid] = (z.abs() > z_thresh).astype(int)
     return indicators
 
@@ -183,12 +190,14 @@ def correlation_distance(a: pd.Series, b: pd.Series) -> float:
         return 1.0  # avoid division by zero
     return 1 - a.corr(b)
 
-def compute_combined_distance_matrix(charts: dict, alpha: float = 0.7) -> pd.DataFrame:
+def compute_combined_distance_matrix(charts: dict, chart_stats: dict, 
+                                     alpha: float = 0.7,
+                                     sigma: float = 3.0) -> pd.DataFrame:
     itemids = list(charts.keys())
     N = len(itemids)
 
     # Step 1: Precompute anomaly indicators
-    indicators = compute_anomaly_indicators(charts)
+    indicators = compute_anomaly_indicators(charts, chart_stats, z_thresh=sigma)
 
     # Step 2: Initialize distance matrix
     dist_matrix = np.zeros((N, N))

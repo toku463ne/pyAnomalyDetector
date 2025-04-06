@@ -23,7 +23,7 @@ class CsvGetter(DataGetter):
         return os.path.exists(self.data_dir)
     
     def get_history_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
-        df = pd.read_csv(os.path.join(self.data_dir, self.history_filename))
+        df = pd.read_csv(os.path.join(self.data_dir, self.history_filename), header=0)
         if len(df) == 0:
             return pd.DataFrame(columns=self.fields)
         df.columns = self.fields
@@ -39,6 +39,24 @@ class CsvGetter(DataGetter):
         df['value'] = df['value'].astype(float)
 
         # filter by time
+        # Ensure 'clock' column is numeric and drop invalid rows
+        df['clock'] = pd.to_numeric(df['clock'], errors='coerce')
+        df = df.dropna(subset=['clock'])
+        df['clock'] = df['clock'].astype(int)
+
+        # Filter by time
+        # Ensure 'clock' column is numeric and drop invalid rows
+        df['clock'] = pd.to_numeric(df['clock'], errors='coerce')
+        df = df.dropna(subset=['clock'])
+        df['clock'] = df['clock'].astype(int)
+
+        # Filter by time
+        # Ensure 'clock' column is numeric and drop invalid rows
+        df['clock'] = pd.to_numeric(df['clock'], errors='coerce')
+        df = df.dropna(subset=['clock'])
+        df['clock'] = df['clock'].astype(int)
+
+        # Filter by time
         df = df[(df['clock'] >= startep) & (df['clock'] <= endep)]
 
         # filter by itemIds
@@ -77,6 +95,9 @@ class CsvGetter(DataGetter):
         # convert value_max to float
         df['value_max'] = df['value_max'].astype(float)
 
+        df['clock'] = pd.to_numeric(df['clock'], errors='coerce')
+        df = df.dropna(subset=['clock'])
+        df['clock'] = df['clock'].astype(int)
         
         # filter by time
         df = df[(df['clock'] >= startep) & (df['clock'] <= endep)]

@@ -68,6 +68,10 @@ dbscan:
   min_samples: 2
   max_iterations: 10
   detection_period: 43200
+  sigma: 2.0
+  jaccard_threshold: 0.2
+  correlation_threshold: 0.3
+
 
 
 ##################################################

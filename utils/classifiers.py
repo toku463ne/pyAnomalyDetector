@@ -21,7 +21,7 @@ import pandas as pd
 def run_dbscan(
     charts: Dict[int, pd.Series],
     chart_stats: Dict[int, pd.Series],
-    sigma: float = 3.0,
+    sigma: float = 2.0,
     jaccard_eps: float = 0.1,
     corr_eps: float = 0.4,
     min_samples: int = 2,
@@ -237,7 +237,7 @@ def calculate_distance(chart1: pd.Series, op_chart1: pd.Series, chart2: pd.Serie
     return min(d1, d2) / np.sqrt(len(chart1))
 
 
-def compute_anomaly_indicators(charts: dict, charts_stats: dict, z_thresh: float = 3.0) -> dict:
+def compute_anomaly_indicators(charts: dict, charts_stats: dict, z_thresh: float = 2.0) -> dict:
     """Returns {itemid: binary anomaly indicator (0/1 Series)}"""
     indicators = {}
     for itemid, series in charts.items():
@@ -267,7 +267,7 @@ def correlation_distance(a: pd.Series, b: pd.Series) -> float:
 
 def compute_combined_distance_matrix(charts: dict, chart_stats: dict, 
                                      alpha: float = 0.2,
-                                     sigma: float = 3.0) -> pd.DataFrame:
+                                     sigma: float = 2.0) -> pd.DataFrame:
     itemids = list(charts.keys())
     N = len(itemids)
 
@@ -292,7 +292,7 @@ def compute_combined_distance_matrix(charts: dict, chart_stats: dict,
 
 
 def compute_jaccard_distance_matrix(charts: dict, charts_stats: dict, 
-                                    sigma: float = 3.0) -> pd.DataFrame:
+                                    sigma: float = 2.0) -> pd.DataFrame:
     itemids = list(charts.keys())
     N = len(itemids)
 

@@ -45,7 +45,10 @@ class Detector:
         dbscan_conf = self.kconf.get("dbscan", {})
         self.dbscan_eps = dbscan_conf.get("eps", 0.5)
         self.dbscan_min_samples = dbscan_conf.get("min_samples", 2)
-        self.dbscan_detection_period = self.kconf.get("detection_period", 10)
+        self.dbscan_detection_period = dbscan_conf.get("detection_period", 10)
+        self.dbscan_sigma = dbscan_conf.get("sigma", 2.0)
+        self.dbscan_jaccard_threshold = dbscan_conf.get("jaccard_threshold", 0.5)
+        self.dbscan_correlation_threshold = dbscan_conf.get("correlation_threshold", 0.5)
 
         
         self.max_iterations = self.kconf.get("max_iterations", 10)
@@ -552,7 +555,10 @@ class Detector:
         clusters, centroids, _ = classifiers.run_dbscan(charts, 
                                         chart_stats, 
                                         threshold=self.dbscan_eps,
-                                        min_samples=self.dbscan_min_samples)
+                                        min_samples=self.dbscan_min_samples,
+                                        sigma=self.dbscan_sigma,
+                                        jaccard_eps=self.dbscan_jaccard_threshold,
+                                        correlation_eps=self.dbscan_correlation_threshold)
         if self.centroid_dir != "":
             filename = f"{self.centroid_dir}/centroids_{endep}.json.gz"
             log(f"save centroids to {filename}")

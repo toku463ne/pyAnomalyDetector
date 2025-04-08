@@ -35,11 +35,19 @@ class Detector:
         self.history_retention = self.conf["history_retention"]
         self.anomaly_keep_secs = self.conf["anomaly_keep_secs"]
         self.history_recent_retention = self.conf["history_recent_retention"]
+        
         self.kconf = self.conf.get("kmeans", {})
         self.k = self.kconf.get("k", 10)
         self.km_threshold = self.kconf.get("threshold", 0.8)
         self.km_threshold2 = self.kconf.get("threshold2", 1.5)
         self.km_detection_period = self.kconf["detection_period"]
+        
+        dbscan_conf = self.kconf.get("dbscan", {})
+        self.dbscan_eps = dbscan_conf.get("eps", 0.5)
+        self.dbscan_min_samples = dbscan_conf.get("min_samples", 2)
+        self.dbscan_detection_period = self.kconf.get("detection_period", 10)
+
+        
         self.max_iterations = self.kconf.get("max_iterations", 10)
         self.n_rounds = self.kconf.get("n_rounds", 10)
         self.item_conds = data_source.get("item_conds", [])
@@ -491,19 +499,19 @@ class Detector:
 
 
     def _classify_anomalies(self, itemIds: List[int], 
-                            base_clocks: List[int], endep: int) -> Dict[int, List[int]]:
+                            endep: int) -> Dict[int, List[int]]:
         #ms = self.ms
         dg = self.dg
         #k = self.k
         if len(itemIds) < 2:    
             return {}
 
-        startep = endep - self.km_detection_period
+        startep = endep - self.dbscan_detection_period
 
         #if k >= len(itemIds):
         #    k = 2
-        threshold = self.km_threshold
-        max_iterations = self.max_iterations
+        #threshold = self.km_threshold
+        #max_iterations = self.max_iterations
         #n_rounds = self.n_rounds
         # get history data
         #history_df = ms.history.get_data(itemIds)
@@ -511,7 +519,7 @@ class Detector:
         if history_df.empty:
             return {}
     
-        base_clocks = list(set(history_df["clock"].tolist()))
+        base_clocks = normalizer.get_base_clocks(startep, endep, self.history_interval)
         
         # normalize history data so that max=1 and min=0
         history_df = normalizer.normalize_metric_df(history_df)
@@ -541,7 +549,10 @@ class Detector:
         #    k = int(len(charts)/2)
 
         # run kmeans
-        clusters, centroids, _ = classifiers.run_dbscan(charts, chart_stats, threshold=threshold, min_samples=2)
+        clusters, centroids, _ = classifiers.run_dbscan(charts, 
+                                        chart_stats, 
+                                        threshold=self.dbscan_eps,
+                                        min_samples=self.dbscan_min_samples)
         if self.centroid_dir != "":
             filename = f"{self.centroid_dir}/centroids_{endep}.json.gz"
             log(f"save centroids to {filename}")

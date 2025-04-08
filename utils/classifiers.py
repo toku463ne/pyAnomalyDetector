@@ -21,9 +21,9 @@ import pandas as pd
 def run_dbscan(
     charts: Dict[int, pd.Series],
     chart_stats: Dict[int, pd.Series],
-    alpha: float = 0.2,
     sigma: float = 3.0,
-    threshold: float = 0.3,
+    jaccard_eps: float = 0.1,
+    corr_eps: float = 0.4,
     min_samples: int = 2,
 ) -> Tuple[Dict[int, int], Dict[int, pd.Series], Dict[int, pd.Series]]:
     """
@@ -37,27 +37,54 @@ def run_dbscan(
     Returns:
         Tuple[Dict[int, int], Dict[int, pd.Series]]: Clusters and centroids.
     """
-    # isolate charts with std = 0
-    charts = {chart_id: chart for chart_id, chart in charts.items() if chart.std() > 0}
-    distance_matrix = compute_combined_distance_matrix(charts, chart_stats, alpha=alpha, sigma=sigma)
+    distance_matrix = compute_jaccard_distance_matrix(charts, chart_stats, sigma=sigma)
     matrix_size = (distance_matrix.max().max() - distance_matrix.min().min())
-    # 1:eps = matrix_size:threshold
-    eps = threshold / matrix_size
     # Ensure the distance matrix values are normalized between 0 and 1
-    if matrix_size > 0:
+    if matrix_size > 1:
         distance_matrix = (distance_matrix - distance_matrix.min().min()) / matrix_size
     
     # Convert chart data to a NumPy array
     data = np.array([chart.values for chart in charts.values()])
 
     # Run DBSCAN with precomputed distance matrix
-    db = DBSCAN(eps=eps, min_samples=min_samples, metric='precomputed').fit(distance_matrix)
+    db = DBSCAN(eps=jaccard_eps, min_samples=min_samples, metric='precomputed').fit(distance_matrix)
 
-    # Extract clusters
-    if all(label == -1 for label in db.labels_):
-        raise ValueError("DBSCAN failed to assign clusters. Consider increasing the 'eps' parameter or inspecting the distance matrix.")
+    # chart_ids per labels
+    db_groups = {}
+    chart_ids = list(charts.keys())
+    for i, label in enumerate(db.labels_):
+        if label not in db_groups:
+            db_groups[label] = []
+        db_groups[label].append(chart_ids[i])
+
     clusters = {chart_id: db.labels_[i] for i, chart_id in enumerate(charts.keys())}
+    max_cluster_id = max(db_groups.keys())
 
+    # classify each db_group by DBSCAN using correlation distance
+    for label, group in db_groups.items():
+        # Skip noise points
+        if label == -1:
+            continue
+
+        # Skip groups with only one chart
+        if len(group) < 2:
+            continue
+
+        # Calculate the distance matrix for the group
+        group_distance_matrix = compute_correlation_distance_matrix({chart_id: charts[chart_id] for chart_id in group})
+        matrix_size = (distance_matrix.max().max() - distance_matrix.min().min())
+        # Ensure the distance matrix values are normalized between 0 and 1
+        if matrix_size > 1:
+            group_distance_matrix = (group_distance_matrix - group_distance_matrix.min().min()) / matrix_size
+        
+        # Run DBSCAN on the group
+        db_group = DBSCAN(eps=corr_eps, min_samples=min_samples, metric='precomputed').fit(group_distance_matrix)
+        # Update labels for the group
+        for i, chart_id in enumerate(group):
+            clusters[chart_id] = max_cluster_id + db_group.labels_[i] + 1
+        max_cluster_id = max(clusters.values())
+    
+    
     # Extract centroids (mean of points in each cluster)
     centroids = {}
     for cluster_id in set(db.labels_):
@@ -233,12 +260,8 @@ def correlation_distance(a: pd.Series, b: pd.Series) -> float:
     """Compute 1 - Pearson correlation between two time series"""
     astd = a.std()
     bstd = b.std()
-    if astd == 0 and bstd == 0:
-        return 0.0
-    elif astd == 0:
-        return np.log1p(bstd)
-    elif bstd == 0:
-        return np.log1p(astd)
+    if astd == 0 or bstd == 0:
+        return 1.0
     return 1 - a.corr(b)
 
 
@@ -264,6 +287,44 @@ def compute_combined_distance_matrix(charts: dict, chart_stats: dict,
         combined = alpha * d_time + (1 - alpha) * d_shape
 
         dist_matrix[i, j] = dist_matrix[j, i] = combined
+
+    return pd.DataFrame(dist_matrix, index=itemids, columns=itemids)
+
+
+def compute_jaccard_distance_matrix(charts: dict, charts_stats: dict, 
+                                    sigma: float = 3.0) -> pd.DataFrame:
+    itemids = list(charts.keys())
+    N = len(itemids)
+
+    # Step 1: Precompute anomaly indicators
+    indicators = compute_anomaly_indicators(charts, charts_stats, z_thresh=sigma)
+
+    # Step 2: Initialize distance matrix
+    dist_matrix = np.zeros((N, N))
+
+    for i, j in combinations(range(N), 2):
+        id_i, id_j = itemids[i], itemids[j]
+        a_i, a_j = indicators[id_i], indicators[id_j]
+
+        d_shape = jaccard_distance(a_i, a_j)
+        dist_matrix[i, j] = dist_matrix[j, i] = d_shape
+
+    return pd.DataFrame(dist_matrix, index=itemids, columns=itemids)
+
+
+def compute_correlation_distance_matrix(charts: dict) -> pd.DataFrame:
+    itemids = list(charts.keys())
+    N = len(itemids)
+
+    # Step 1: Initialize distance matrix
+    dist_matrix = np.zeros((N, N))
+
+    for i, j in combinations(range(N), 2):
+        id_i, id_j = itemids[i], itemids[j]
+        s_i, s_j = charts[id_i], charts[id_j]
+
+        d_shape = correlation_distance(s_i, s_j)
+        dist_matrix[i, j] = dist_matrix[j, i] = d_shape
 
     return pd.DataFrame(dist_matrix, index=itemids, columns=itemids)
 
@@ -440,5 +501,5 @@ def evaluate_clusters(data: Dict[int, pd.Series], labels: Dict[int, int]) -> flo
     label_array = np.array([labels[item_id] for item_id in data.keys()])
     
     # Compute Silhouette Score
-    score = silhouette_score(data_array, label_array, metric='euclidean')
+    score = silhouette_score(data_array, label_array, metric='correlation')
     return score

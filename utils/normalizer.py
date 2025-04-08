@@ -9,9 +9,9 @@ Generates a list of base clocks based on the given start and end epochs and the 
 """
 def get_base_clocks(startep: int, endep: int, unitsecs: int) -> List[int]:
     # Adjust startep and endep to be earlier epochs that meet epoch % unitsecs == 0
-    adjusted_startep = startep - (startep % unitsecs)
-    adjusted_endep = endep - (endep % unitsecs)
-    return list(range(adjusted_startep, adjusted_endep + unitsecs, unitsecs))
+    adjusted_startep = int(startep - (startep % unitsecs))
+    adjusted_endep = int(endep - (endep % unitsecs))
+    return list(range(adjusted_startep, adjusted_endep + int(unitsecs), int(unitsecs)))
 
 
 """ fit_to_base_clocks:
@@ -91,8 +91,10 @@ def normalize_metric_df(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 def df2charts(df: pd.DataFrame, 
-              itemIds: List[int]) -> Tuple[Dict[int, pd.Series], List[int]]:
-    base_clocks = list(set(df["clock"].tolist()))
+              itemIds: List[int], unitsecs: int =600) -> Tuple[Dict[int, pd.Series], List[int]]:
+    startep = df['clock'].min()
+    endep = df['clock'].max()
+    base_clocks = get_base_clocks(startep, endep, unitsecs)
     # sort the base clocks
     base_clocks.sort()
     charts = {}

@@ -57,7 +57,8 @@ class CsvGetter(DataGetter):
         df['clock'] = df['clock'].astype(int)
 
         # Filter by time
-        df = df[(df['clock'] >= startep) & (df['clock'] <= endep)]
+        df = df[(df['clock'] >= startep)]
+        df = df[(df['clock'] <= endep)]
 
         # filter by itemIds
         if len(itemIds) > 0:

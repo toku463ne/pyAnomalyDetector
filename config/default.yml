@@ -60,6 +60,15 @@ kmeans:
   n_rounds: 10
   detection_period: 43200
 
+##################################################
+#  dbscan clustering params
+##################################################
+dbscan:
+  eps: 0.5
+  min_samples: 2
+  max_iterations: 10
+  detection_period: 43200
+
 
 ##################################################
 #  anomaly detection params

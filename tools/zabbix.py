@@ -74,8 +74,9 @@ if __name__ == '__main__':
     trends_retention = conf["trends_retention"]
     trend_startep = endep - trends_interval * trends_retention
 
+    dbscan_config = conf["dbscan"]
     history_interval = conf["history_interval"]
-    history_retention = conf["history_retention"]
+    history_retention = dbscan_config["detection_period"]
     history_startep = endep - history_interval * history_retention
     
     trends_file = os.path.join(args.outdir, "trends.csv.gz")

@@ -19,11 +19,11 @@ class CsvViews(View):
 
         # filter trends and history by startep and endep
         if self.startep != 0:
-            trends = trends[(trends['clock'] >= self.startep) & (trends['clock'] <= self.endep)]
-            history = history[(history['clock'] >= self.startep) & (history['clock'] <= self.endep)]
+            trends = trends[trends['clock'] >= self.startep]
+            history = history[history['clock'] >= self.startep]
         if self.endep != 0:
-            trends = trends[(trends['clock'] >= self.startep) & (trends['clock'] <= self.endep)]
-            history = history[(history['clock'] >= self.startep) & (history['clock'] <= self.endep)]
+            trends = trends[trends['clock'] <= self.endep]
+            history = history[history['clock'] <= self.endep]
 
         # concat trends and history
         data = pd.concat([trends, history])

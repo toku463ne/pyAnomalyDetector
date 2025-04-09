@@ -551,14 +551,13 @@ class Detector:
         #if len(charts)/2 < k:
         #    k = int(len(charts)/2)
 
-        # run kmeans
+        # run dbscan
         clusters, centroids, _ = classifiers.run_dbscan(charts, 
                                         chart_stats, 
-                                        threshold=self.dbscan_eps,
                                         min_samples=self.dbscan_min_samples,
                                         sigma=self.dbscan_sigma,
                                         jaccard_eps=self.dbscan_jaccard_threshold,
-                                        correlation_eps=self.dbscan_correlation_threshold)
+                                        corr_eps=self.dbscan_correlation_threshold)
         if self.centroid_dir != "":
             filename = f"{self.centroid_dir}/centroids_{endep}.json.gz"
             log(f"save centroids to {filename}")
@@ -640,7 +639,7 @@ class Detector:
         lambda2_threshold = self.lambda2_threshold
         lambda3_threshold = self.lambda3_threshold
         lambda4_threshold = self.lambda4_threshold
-        k = self.k
+        #k = self.k
 
         log(f"First count: {len(itemIds)}")
 
@@ -730,8 +729,8 @@ class Detector:
         all_anomaly_itemIds = ms.anomalies.get_itemids()
         all_anomaly_itemIds.extend(anomaly_itemIds2)
         if len(all_anomaly_itemIds) > 2:
-            if len(all_anomaly_itemIds) < k:
-                k = 2
+            #if len(all_anomaly_itemIds) < k:
+            #    k = 2
 
             # get anomalies in the db
             #all_anomaly_itemIds = ms.anomalies.get_itemids()
@@ -740,7 +739,7 @@ class Detector:
 
             # classify anomaly_itemIds3 by kmeans
             log(f"detector.classify_anomalies(anomaly_itemIds2)")
-            clusters = self._classify_anomalies(all_anomaly_itemIds, base_clocks, endep)
+            clusters = self._classify_anomalies(all_anomaly_itemIds, endep)
                     
         groups_info = dg.classify_by_groups(anomaly_itemIds2, group_names)
         if len(anomaly_itemIds2) == 0:

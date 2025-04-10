@@ -262,7 +262,7 @@ def correlation_distance(a: pd.Series, b: pd.Series) -> float:
     bstd = b.std()
     if astd == 0 or bstd == 0:
         return 1.0
-    return 1 - a.corr(b)
+    return 1 - abs(a.corr(b))
 
 
 def compute_combined_distance_matrix(charts: dict, chart_stats: dict, 

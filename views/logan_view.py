@@ -34,7 +34,7 @@ view_sources:
                     - host4
 """
 
-class LocalWeb(View):
+class LoganWeb(View):
     def __init__(self, config):
         self.app = Flask(__name__)
         self.app.config['TEMPLATES_AUTO_RELOAD'] = True

@@ -72,7 +72,7 @@ def run_dbscan(
 
         # Calculate the distance matrix for the group
         group_distance_matrix = compute_correlation_distance_matrix({chart_id: charts[chart_id] for chart_id in group})
-        matrix_size = (distance_matrix.max().max() - distance_matrix.min().min())
+        matrix_size = (group_distance_matrix.max().max() - group_distance_matrix.min().min())
         # Ensure the distance matrix values are normalized between 0 and 1
         if matrix_size > 1:
             group_distance_matrix = (group_distance_matrix - group_distance_matrix.min().min()) / matrix_size
@@ -81,7 +81,11 @@ def run_dbscan(
         db_group = DBSCAN(eps=corr_eps, min_samples=min_samples, metric='precomputed').fit(group_distance_matrix)
         # Update labels for the group
         for i, chart_id in enumerate(group):
-            clusters[chart_id] = max_cluster_id + db_group.labels_[i] + 1
+            if db_group.labels_[i] != -1:
+                clusters[chart_id] = -1
+            else:
+                # Assign a new cluster id based on the max_cluster_id
+                clusters[chart_id] = max_cluster_id + db_group.labels_[i] + 1
         max_cluster_id = max(clusters.values())
     
     

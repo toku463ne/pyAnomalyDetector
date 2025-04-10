@@ -248,7 +248,7 @@ def compute_anomaly_indicators(charts: dict, charts_stats: dict, z_thresh: float
         z_mean = charts_stats[itemid]['mean']
         z_std = charts_stats[itemid]['std']
         if z_std == 0:
-            z = 0
+            z = pd.Series(0, index=series.index)
         else:
             z = (series - z_mean) / z_std
         indicators[itemid] = (z.abs() > z_thresh).astype(int)

@@ -1,0 +1,57 @@
+admdb:
+  host: '{{ ADM_DB_HOST }}'
+  user: anomdec
+  password: '{{ ADM_DB_PASSWORD }}'
+  dbname: '{{ ADM_DB_DB_NAME }}'
+  port: 5432
+  schema: '{{ ADM_DB_SCHEMA }}'
+
+logging:
+  enabled: true
+  level: INFO
+  format: "%(asctime)s %(name)s %(levelname)s | %(message)s"
+  file: "logan.log"
+  log_dir: "{{ HOME }}/anomdec/logs"
+
+data_sources:
+  logan:
+    type: "logan"
+    name: "logan"
+    base_url: '{{ LOGAN_BASE_URL }}'
+    minimal_group_size: 1000
+    top_n: 10
+    data_dir: "{{ HOME }}/anomdec/logandata"
+    groups:
+      firewall: 
+        1: IMTFW001
+        2: NFPFW003
+      proxy:
+        3: SOPHOS-01
+        4: pfsense67051_openvpn
+  zabbix: 
+    type: "zabbix"
+    host: '{{ ZABBIX_DB_HOST }}'
+    api_url: "{{ ZABBIX_API_URL }}"
+    dbname: '{{ ZABBIX_DB_NAME }}'
+    user: '{{ ZABBIX_DB_USER }}'
+    password: '{{ ZABBIX_DB_PASSWORD }}'
+    port: 5432
+    retries: 3
+
+view_sources:
+  streamlit:
+    name: "streamlit"
+    type: streamlit
+    port: 5000
+    chart_categories:
+      bygroup:
+        name: "By Group"
+        one_item_per_host: true
+      bycluster:
+        name: "By Cluster"
+        one_item_per_host: false
+    layout:
+      chart_width: 400
+      chart_height: 300
+      max_vertical_charts: 4
+      max_horizontal_charts: 3

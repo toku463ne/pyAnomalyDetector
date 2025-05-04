@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS {{ TABLENAME }} (
+    itemid DECIMAL,
+    created INTEGER,
+    group_name VARCHAR(255),
+    hostid INTEGER,
+    clusterid INTEGER,
+    host_name VARCHAR(255),
+    item_name VARCHAR(255),
+    trend_mean DOUBLE PRECISION,
+    trend_std DOUBLE PRECISION,
+    PRIMARY KEY (itemid, created, group_name)
+);

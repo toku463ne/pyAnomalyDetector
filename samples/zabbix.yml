@@ -1,0 +1,106 @@
+admdb:
+  host: '{{ ADM_DB_HOST }}'
+  user: anomdec
+  password: '{{ ADM_DB_PASSWORD }}'
+  dbname: '{{ ADM_DB_DB_NAME }}'
+  port: 5432
+  schema: public
+
+logging:
+  enabled: true
+  level: INFO
+  format: "%(asctime)s %(name)s %(levelname)s | %(message)s"
+  file: "zabbix.log"
+  log_dir: "{{ HOME }}/anomdec/logs"
+
+data_sources:
+  zabbix: 
+    type: "zabbix"
+    host: '{{ ZABBIX_DB_HOST }}'
+    api_url: "{{ ZABBIX_API_URL }}"
+    dbname: '{{ ZABBIX_DB_NAME }}'
+    user: '{{ ZABBIX_DB_USER }}'
+    password: '{{ ZABBIX_DB_PASSWORD }}'
+    port: 5432
+    retries: 3
+    item_conds: 
+      - name: ignore traffic lower than 8Mbps
+        filter: "key_ LIKE 'net.if.%.[%]' AND units = 'bps' "
+        condition: #'value > 8000000'
+          operator: '>'
+          value: 8000000
+      - name: ignore uptime
+        filter: "key_ LIKE '%uptime%'"
+      - name: ignore localtime
+        filter: "key_ = 'system.localtime'"
+    item_diff_conds:
+      - name: ignore small changes in the CPU
+        filter: "key_ LIKE '%cpu.%' AND units = '%'"
+        condition: #value > 8
+          operator: '>'
+          value: 8
+      - name: ignore small changes in the memory
+        filter: "key_ LIKE '%mem.%' AND units = '%'"
+        condition: #value > 8
+          operator: '>'
+          value: 8
+      - name: ignore small changes in the disk
+        filter: "key_ LIKE '%vfs.fs.size%' AND units = '%'"
+        condition: #value > 3
+          operator: '>'
+          value: 3
+      - name: ignore small changes in the disk
+        filter: "key_ LIKE '%vfs.fs.size%' AND units = 'B'"
+        condition: #value > 1000000000
+          operator: '>'
+          value: 1000000000
+      - name: ignore small changes in the disk inode
+        filter: "key_ LIKE '%vfs.fs.inode%' AND units = '%'"
+        condition: #value > 3
+          operator: '>'
+          value: 3
+      - name: ignore small changes in the pused
+        filter: "key_ LIKE '%.pused%' AND units = '%'"
+        condition: #value > 3
+          operator: '>'
+          value: 3    
+      - name: ignore small changes in the web.test.time
+        filter: "key_ LIKE 'web.test.time[%]' AND units = 's'"
+        condition: #value > 1
+          operator: '>'
+          value: 1
+      - name: ignore small changes in the network traffics
+        filter: "key_ LIKE 'net.if.%[%]' AND units = 'bps'"
+        condition: #value > 1000000
+          operator: '>'
+          value: 1000000
+      - name: ignore whole small percentage changes
+        filter: "units = '%'"
+        condition: #value > 3
+          operator: '>'
+          value: 3
+      - name: ignore 5 degrees of temperatures
+        filter: "units = '°C'"
+        condition:
+          operator: '>'
+          value: 5
+      
+
+view_sources:
+  zabbix:
+    dashboard_name: "anomaly_check_new"
+    type: "zabbix_dashboard"
+    api_url: "{{ ZABBIX_API_URL }}"
+    user: "{{ ZABBIX_API_USER }}"
+    password: "{{ ZABBIX_API_PASSWORD }}"
+    data_source_name: "zabbix"
+
+group_names:
+  - hw/nw
+  - hw/pc
+  - app/cal
+  - app/bcs
+  - app/imt
+  - app/sim
+  - app/iim
+

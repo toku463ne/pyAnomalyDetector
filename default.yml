@@ -1,0 +1,94 @@
+##################################################
+#  Logging
+##################################################
+logging:
+  enabled: false
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "app.log"
+  log_dir: "{{ HOME }}/anomdec/logs"
+
+
+##################################################
+#  admdb: PostgreSQL database for AnomDec admin
+##################################################
+admdb:
+  host: '{{ ADM_DB_HOST }}'
+  user: anomdec
+  password: '{{ ADM_DB_PASSWORD }}'
+  dbname: anomdec
+  port: 5432
+  schema: public
+
+
+##################################################
+#  trends: Configuration for trend analysis
+##################################################
+trends_interval: 86400
+trends_retention: 14
+trends_min_count: 14
+
+##################################################
+#  history: Configuration for history analysis
+##################################################
+history_interval: 600
+history_retention: 18
+history_recent_retention: 6
+
+
+##################################################
+#  data_sources
+##################################################
+#data_sources:
+#  csv_source:
+#    data_dir: "testdata/csv/20250214_1100"
+#    type: csv
+
+##################################################
+#  views
+##################################################
+#view_sources:
+ # flask_view:
+ #   type: flask
+ #   host: "localhost"
+ #   port: 5000
+ #   debug: false
+ #   layout: 
+ #     chart_width: 400
+ #     chart_height: 300
+ #     max_vertical_charts: 4
+ #     max_horizontal_charts: 3
+ #   chart_categories:
+ #     "bygroup": {
+ #       "name": "By Group",
+ #       "one_item_per_host": true}
+
+
+##################################################
+#  other params
+##################################################
+batch_size: 100
+
+##################################################
+#  clustering default params
+##################################################
+dbscan:
+  jaccard_eps: 0.1
+  corr_eps: 0.2
+  min_samples: 2
+  detection_period: 43200
+  sigma: 2.0
+  max_iterations: 100
+
+
+##################################################
+#  anomaly detection params
+##################################################
+detect1_lambda_threshold: 3.0
+detect2_lambda_threshold: 2.0
+detect3_lambda_threshold1: 1.0
+detect3_lambda_threshold2: 2.0
+ignore_diff_rate: 0.2 # ignore if the peaks are just less than this rate
+anomaly_valid_count_rate: 0.8 # valid anomaly if the count is more than this rate
+anomaly_keep_secs: 86400 # 1day  
+

@@ -1,67 +1,70 @@
 # pyAnomalyDetector
+Detects anomalies in time series metric data, such as from Zabbix or log files.   
+Log data are expected to be the output of [goLogAnalyzer](https://github.com/toku463ne/goLogAnalyzer).  
+By default, the tool checks for anomalies in the most recent 3 hours by comparing them to data from the past 14 days.  
+For the detected anomalies we provide visualization by the following ways:
+- Web UI (by [Streamlit](https://streamlit.io/))
+- Zabbix dashboard
+- JSON output  
+  
+  
+An item is considered "anomalous" if it meets all of the following conditions:
+- **Detect1:**  
+    The average of recent data exceeds the historical mean by more than `detect1_lambda_threshold` times the standard deviation.  
+    If `item_conds` is defined, items are filtered according to these conditions.
 
+- **Detect2:**  
+    The difference between adjacent values in a time series is unusually large compared to historical variation—specifically, if it exceeds `detect2_lambda_threshold` times the historical standard deviation.
+
+- **Detect3:**  
+    Calculate the average of the maximum and minimum values for each trend.   
+    If the recent data is above or below `detect3_lambda_threshold`, it is considered anomalous.  
+    Additionally, compute the maximum and minimum averages for each sliding window of past trend data.   
+    If the recent average is greater or smaller than these, it is flagged as anomalous.
+  
 ## Setup
-**Prepare postgresql server**
-
-**Execute the setup script**
-```bash
-./setup.sh
-```
-
-## Setup postgresql for admin
+**Prepare the PostgreSQL server somewhere**
+  
+**Set up PostgreSQL for admin**  
+Used for management and data caching.  
 ```sql
 CREATE DATABASE anomdec;
-CREATE DATABASE anomdec_test;
-CREATE USER anomdec WITH ENCRYPTED PASSWORD 'anomdec_pass';
+CREATE DATABASE anomdec_test; -- optional: for unit tests
+CREATE USER anomdec WITH ENCRYPTED PASSWORD 'You password';
 GRANT ALL PRIVILEGES ON DATABASE anomdec TO anomdec;
-GRANT ALL PRIVILEGES ON DATABASE anomdec_test TO anomdec;
+GRANT ALL PRIVILEGES ON DATABASE anomdec_test TO anomdec; -- optional: for unit tests
+```
+**Configure streamlit (optional)**  
+If you use streamlit, edit streamlit parameters in `scripts/setup.env` as necessary.  
+  
+**Run the setup script**  
+This will setup python virtualenv and install necessary packages.
+```bash
+scripts/setup.sh
+```
+
+
+## How to use
+### Prepare yaml file
+Refer to [sample](samples/streamlit.yml) and prepare a yaml file for your envinronment.  
+The yaml file could be jinja format.  
+
+If you don't want to include sensitive data like passwords in the yaml file, you could include them in a secret file.
+Configure environment variable `ANOMDEC_SECRET_PATH` to specify the secret file path in yaml format too.
+```bash
+export ANOMDEC_SECRET_PATH=/path/to/your/secretfile.yml
 ```
   
-## How to use  
-1. Collect trend data
 
-
-
-## Algorithm
-- load config:
-load `default.yml` and an additional config file if provided
-
-- Initialize or update trends data:
-    Get `trends` from the data source and save the following values to `anomdec.trends_stats` table.  
-	  - sum: sum of values
-      - sqr_sum: sum of square of values
-      - count: count of values
-      - t_mean: average
-      - t_std: standard deviation
+### Collect trend data
+The first step is to prepare trend statics table in the postgresql.  
+Execute below once of twice a day.
+```bash
+scripts/run_daily_trends_stats.sh -c config.yaml
+```  
   
-- Data Conversion:
-    Convert `history` from the data source into the `anomdec.history` table.  
-    Data will drop into a single interval defined in the config file.  
-  
-  
-- 1st detection:
-    - calculate h_mean: the mean of each items in the `anomdec.history` table
-    - calculate lambda1: (h_mean - t_mean)/t_std  of each items
-    - if lambda1 > lambda1_threshold, store the item in the dict variable latest_items
-    
-- 2nd detection:
-  for items in latest_items variable
-	- Get `trends` from the data source filtering by
-		lambda2: (value - t_mean)/std > lambda2_threshold
-	- calculate t2_mean, t2_std of the filtered values
-    - calculate lambda3: (h_mean - t2_mean)/t2_std
-	- if lambda3 > lambda3_threshold, store the item in the dict variable latest_items
-	
-- Normalize recent history:
-    - For item in latest_items:
-      - Normalize item data in `anomdec.history` so that max=1 and min=-0
-
-- Summarize recent data:
-    - classify the normalized data by a customized k-means algorithm  
-
-- View the result
-	- Show all items filtered by 2nd detection somehow (zabbix dashboard etc)  
-  
-- Alarming:
-	- If there are items from multiple hosts in the same k-means group, send an alarm.
-    
+### Detect anomaly
+Execute below to detect anomaly.
+```bash
+scripts/run_hourly_detection.sh config.yaml $HOME/anomdec/report.json
+```  

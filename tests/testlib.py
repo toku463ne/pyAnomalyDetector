@@ -37,3 +37,11 @@ def import_test_data(conf: Dict, itemIds: List[int], endep: int):
         d.update_history(endep)
         d.update_history_stats(endep)
         d.update_anomalies(endep)
+
+def load_test_conf():
+    import sys, os
+    import utils.config_loader as config_loader
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    os.environ['ANOMDEC_SECRET_PATH'] = os.path.join('tests', 'test_secret.yml')
+    config_loader.load_config(os.path.join('tests', 'test_config.yml'))
+    

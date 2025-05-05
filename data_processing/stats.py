@@ -1,7 +1,6 @@
 import pandas as pd
 from typing import List, Dict
 import numpy as np
-import utils.config_loader as config_loader
 import data_getter
 from models.models_set import ModelsSet
 import utils
@@ -24,6 +23,7 @@ class Stats:
             group_names = []
         if itemIds is None:
             itemIds = []
+        self.data_source = data_source
         self.dg = data_getter.get_data_getter(data_source)
         self.itemIds = self.dg.get_itemIds(item_names=item_names, 
                                 host_names=host_names, group_names=group_names, 
@@ -144,7 +144,7 @@ class Stats:
 
 
     def update_stats(self, startep: int, diff_startep: int, endep: int, oldstartep: int):
-        batch_size = config_loader.conf["batch_size"]
+        batch_size = self.data_source["batch_size"]
         itemIds = self.itemIds
 
         existing, nonexisting = self._separate_existing_itemIds(itemIds)

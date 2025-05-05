@@ -5,8 +5,6 @@ import pandas as pd
 from pyzabbix import ZabbixAPI
 import logging
 
-from models.models_set import ModelsSet
-import utils.config_loader as config_loader
 from views.view import View
 
 def log(msg, level=logging.INFO):

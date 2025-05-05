@@ -9,7 +9,8 @@ import data_getter
 name = 'test_trends_stats'
 class TestTrendsStats(unittest.TestCase):
     def run_update_test(self, n_expected_items, config, endep, itemIds, initialize, exluded_itemIds=[]):
-        dg = data_getter.get_data_getter(config['data_sources'][name])
+        data_source = config['data_sources'][name]
+        dg = data_getter.get_data_getter(data_source)
         self.assertIsNotNone(dg)
 
         ms = ModelsSet(name)
@@ -71,6 +72,7 @@ class TestTrendsStats(unittest.TestCase):
                 'data_dir': "testdata/csv/20250214_1100",
                 'type': 'csv'
             }
+        config_loader.cascade_config("data_sources")
         
         dg = data_getter.get_data_getter(config['data_sources'][name])
         self.assertIsNotNone(dg)

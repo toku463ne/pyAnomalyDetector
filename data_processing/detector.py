@@ -26,20 +26,20 @@ class Detector:
                  ):
         config = config_loader.conf
         self.skip_history_update = skip_history_update
-        self.batch_size = config['batch_size']
-        self.detect1_lambda_threshold = config['detect1_lambda_threshold']
-        self.detect2_lambda_threshold = config['detect2_lambda_threshold']
-        self.detect3_lambda_threshold1 = config['detect3_lambda_threshold1']
-        self.detect3_lambda_threshold2 = config['detect3_lambda_threshold2']
-        self.trends_min_count = config['trends_min_count']
-        self.ignore_diff_rate = config['ignore_diff_rate']
-        self.history_interval = config["history_interval"]
-        self.trends_interval = config["trends_interval"]
-        self.history_retention = config["history_retention"]
-        self.history_recent_retention = config["history_recent_retention"]
-        self.trends_retention = config["trends_retention"]
-        self.anomaly_valid_count_rate = config["anomaly_valid_count_rate"]
-        self.anomaly_keep_secs = config["anomaly_keep_secs"]
+        self.batch_size = data_source['batch_size']
+        self.detect1_lambda_threshold = data_source['detect1_lambda_threshold']
+        self.detect2_lambda_threshold = data_source['detect2_lambda_threshold']
+        self.detect3_lambda_threshold1 = data_source['detect3_lambda_threshold1']
+        self.detect3_lambda_threshold2 = data_source['detect3_lambda_threshold2']
+        self.trends_min_count = data_source['trends_min_count']
+        self.ignore_diff_rate = data_source['ignore_diff_rate']
+        self.history_interval = data_source["history_interval"]
+        self.trends_interval = data_source["trends_interval"]
+        self.history_retention = data_source["history_retention"]
+        self.history_recent_retention = data_source["history_recent_retention"]
+        self.trends_retention = data_source["trends_retention"]
+        self.anomaly_valid_count_rate = data_source["anomaly_valid_count_rate"]
+        self.anomaly_keep_secs = data_source["anomaly_keep_secs"]
         
         self.data_source = data_source
         self.data_source_name = data_source_name
@@ -585,8 +585,6 @@ class Detector:
         if df is None or len(df) == 0:
             return
 
-        print(df)
-
         # get trends stats
         trends_stats = ms.trends_stats.read_stats(itemIds)
 
@@ -623,6 +621,7 @@ class Detector:
         df = self.get_items_details(created, itemIds, group_map)
         if df is None or df.empty:
             return
+        print(df)
         ms.anomalies.insert_data(df)
         ms.anomalies.delete_old_entries(created - self.anomaly_keep_secs)
 

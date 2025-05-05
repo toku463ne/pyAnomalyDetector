@@ -55,8 +55,8 @@ def update_stats(conf: Dict,
         oldstartep = ms.trends_updates.get_startep()
 
         # get old epoch from trends_interval and trends_retention
-        trends_interval = conf['trends_interval']
-        trends_retention = conf['trends_retention']
+        trends_interval = data_source['trends_interval']
+        trends_retention = data_source['trends_retention']
         startep = endep - trends_interval * trends_retention
         if diff_startep == 0:
             diff_startep = startep

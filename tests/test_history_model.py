@@ -4,10 +4,11 @@ import os
 
 from models.history import HistoryModel
 from models.models_set import ModelsSet
-
+import tests.testlib as testlib
 
 class TestHistoryModel(unittest.TestCase):
     def test_history_model(self):
+        testlib.load_test_conf()
         ms = ModelsSet("test_history")
         history = ms.history
         self.assertTrue(history.check_conn())

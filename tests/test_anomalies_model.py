@@ -1,14 +1,17 @@
 import __init__
 import unittest
-import os
+
 import pandas as pd
 
+import tests.testlib as testlib
 from models.anomalies import AnomaliesModel
 from models.models_set import ModelsSet
 
 
 class TestAnomaliesModel(unittest.TestCase):
     def test_anomalies_model(self):
+        testlib.load_test_conf()
+        
         ms = ModelsSet("test_anomalies_model")
         anomalies = ms.anomalies
         self.assertTrue(anomalies.check_conn())

@@ -2,7 +2,7 @@
 unit tests for sample_getter.py
 """
 import unittest, os
-import time
+import tests.testlib as testlib
 
 import __init__
 
@@ -11,6 +11,7 @@ from data_getter.csv_getter import CsvGetter
 
 class TestCsvGetter(unittest.TestCase):
     def test_csv_getter(self):
+        testlib.load_test_conf()
         data_source = {
             'type': 'csv',
             'data_dir': 'testdata/csv/20250214_1100'

@@ -8,6 +8,11 @@ class Model:
     sql_template = ""
 
     def __init__(self, data_source_name=""):
+        data_sources = config_loader.conf.get("data_sources", {})
+        if data_source_name not in data_sources:
+            self.data_source = config_loader.conf
+        else:
+            self.data_source = config_loader.conf["data_sources"][data_source_name]
         self.schema_name = config_loader.conf["admdb"]["schema"]
         self.data_source_name = data_source_name
         if data_source_name == "":
@@ -15,7 +20,7 @@ class Model:
         else:
             self.table_name = f"{data_source_name}_{self.name}"
         self.db = PostgreSqlDB(config_loader.conf['admdb'])
-        self.batch_size = config_loader.conf["batch_size"]
+        self.batch_size = self.data_source["batch_size"]
         self.create_table()
 
     def truncate(self):

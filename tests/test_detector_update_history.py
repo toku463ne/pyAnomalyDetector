@@ -5,7 +5,7 @@ from models.models_set import ModelsSet
 import utils.config_loader as config_loader
 from data_processing.detector import Detector
 from utils import normalizer
-
+import tests.testlib as testlib
 
 class TestDetector(unittest.TestCase):
     def run_update_test(self, name, config, endep, itemIds, itemId_to_check):
@@ -36,6 +36,7 @@ class TestDetector(unittest.TestCase):
             
 
     def test_update_history(self):
+        testlib.load_test_conf()
         name = 'test_update_history'
         ms = ModelsSet(name)
         ms.initialize()
@@ -47,6 +48,7 @@ class TestDetector(unittest.TestCase):
                 'type': 'csv'
             }
         config['history_interval'] = 600
+        config_loader.cascade_config("data_sources")
         
         itemIds = [59888,  93281,  94003, 110309, 141917, 217822]
         endep = 1739505598 - 1800

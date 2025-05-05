@@ -6,12 +6,13 @@ import utils.config_loader as config_loader
 import detect_anomalies
 import trends_stats
 from views.streamlit_view import StreamlitView
-
+import tests.testlib as testlib
 
 
 class TestDetector(unittest.TestCase):
     
     def test_history_stats(self):
+        testlib.load_test_conf()
         name = 'test_detect2'
         config = config_loader.conf
         config['data_sources'] = {}

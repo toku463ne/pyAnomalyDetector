@@ -25,11 +25,11 @@ radio_order = [CAT_BY_GROUP, CAT_BY_CLUSTER, CAT_LATEST]
 
 class StreamlitView(View):
     def __init__(self, config: Dict, view_source: Dict) -> None:
-        self.trends_interval = config["trends_interval"]
-        self.trends_retention = config["trends_retention"]
-        self.history_interval = config["history_interval"]
-        self.history_retention = config["history_retention"]
-        self.detect1_lambda_threshold = config["detect1_lambda_threshold"]
+        self.trends_interval = view_source["trends_interval"]
+        self.trends_retention = view_source["trends_retention"]
+        self.history_interval = view_source["history_interval"]
+        self.history_retention = view_source["history_retention"]
+        self.detect1_lambda_threshold = view_source["detect1_lambda_threshold"]
 
         self.view_source = view_source
         self.itemIds = view_source.get("itemids", [])
@@ -47,7 +47,7 @@ class StreamlitView(View):
         self.chart_width = layout.get("chart_width", 600)
         self.chart_height = layout.get("chart_height", 300)
         self.chart_type = layout.get("chart_type", "line")
-        self.data_sources = config["data_sources"]
+        self.data_sources = view_source["data_sources"]
 
     def _generate_charts_in_group(self, df: pd.DataFrame, properties: Dict, titles: Dict) -> go.Figure:
         itemIds = df['itemid'].unique()
@@ -397,11 +397,11 @@ def run(config: Dict) -> None:
 
     view_source_name = query_params.get("view_source", "")
     if view_source_name == "":
-        for view_source_name, view_source in config["view_sources"].items():
+        for view_source_name, view_source in view_source["view_sources"].items():
             if view_source["type"] == "streamlit":
                 break
     else:
-        view_source = config["view_sources"][view_source_name]
+        view_source = view_source["view_sources"][view_source_name]
     
     v = StreamlitView(config, view_source)
 

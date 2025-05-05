@@ -75,8 +75,22 @@ def load_config(config_path=None, additional_context={}) -> Dict:
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
 
+    # cascade config inside each data_source
+    cascade_config("data_sources")
+    cascade_config("view_sources")
+
     return conf
 
-
+def cascade_config(target: Dict):
+    # cascade config inside each data_source
+    target_sources = conf.get(target, {})
+    for target_source_name, target_source in target_sources.copy().items():
+        for key, value in conf.items():
+            if key not in ["admdb", "data_sources", "logging", "view_sources"]:
+                # cascade only if the key is not in the target source
+                if key not in target_source:
+                    target_source[key] = value
+        target_sources[target_source_name].update(target_source)
+    return conf
 
 

@@ -10,6 +10,8 @@ from views.flask_view import FlaskView
 from models.models_set import ModelsSet
 import pandas as pd
 
+import tests.testlib as testlib
+
 history_end = 1739505557
 trend_start = history_end - 3600 * 24 * 1
 history_start = history_end - 3600 * 3
@@ -85,6 +87,7 @@ class TestFlaskView(unittest.TestCase):
         fv.run()
 
     def test_generate_charts(self):
+        testlib.load_test_conf()
         port = 80
         conf = self.get_conf(port)
         data_sources = self.get_datasources("test_generate_charts")

@@ -17,7 +17,7 @@ def run_tests():
     import tests.test_detector_update_history
     import tests.test_detector_detect1
     import tests.test_dbscan
-    #import tests.test_logan_getter
+    import tests.test_logan_getter
     import tests.test_reporter
 
     loader = unittest.TestLoader()
@@ -35,7 +35,7 @@ def run_tests():
     suite.addTests(loader.loadTestsFromModule(tests.test_detector_update_history))
     suite.addTests(loader.loadTestsFromModule(tests.test_dbscan))
     suite.addTests(loader.loadTestsFromModule(tests.test_detector_detect1))
-    #suite.addTests(loader.loadTestsFromModule(tests.test_logan_getter))
+    suite.addTests(loader.loadTestsFromModule(tests.test_logan_getter))
     suite.addTests(loader.loadTestsFromModule(tests.test_reporter))
 
     

@@ -8,7 +8,7 @@ from data_processing.detector import Detector
 from utils import normalizer
 import trends_stats
 import detect_anomalies
-
+import tests.testlib as testlib
 
 class TestDetector(unittest.TestCase):
     def run_update_test(self, name, config, endep, itemIds, itemId_to_check):
@@ -39,6 +39,7 @@ class TestDetector(unittest.TestCase):
             
 
     def test_update_history(self):
+        testlib.load_test_conf()
         name = 'test_detector_logan'
         ms = ModelsSet(name)
         ms.initialize()
@@ -46,21 +47,23 @@ class TestDetector(unittest.TestCase):
         config['data_sources'] = {}
         config['data_sources'][name] = {
             'base_url': 'http://localhost:8002/',
+            'data_dir': '/tmp/anomdec/test_detector_logan',
             'type': 'logan',
             'groups': {
                 'proxy': {
-                    1: 'SOPHOS-01',
-                    2: 'pfsense67051_openvpn'
+                    1: 'proxy01',
+                    2: 'proxy02'
                 },
                 'firewall': {
-                    3: 'IMTFW001',
-                    4: 'NFPFW003',
+                    3: 'fw01',
+                    4: 'fw02',
                 },
             },
             'minimal_group_size': 1000
             }
         config['history_interval'] = 3600
         config['detect1_lambda_threshold'] = 2.0
+        config_loader.cascade_config("data_sources")
 
         os.system('cd testdata/loganal && python3 -m http.server 8002 &')
         time.sleep(1)

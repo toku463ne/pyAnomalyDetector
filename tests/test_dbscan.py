@@ -8,6 +8,7 @@ import classifiers.dbscan as dbscan
 class TestDbscan(unittest.TestCase):
     
     def test_dbscan(self):
+        testlib.load_test_conf()
         name = 'test_dbscan'
         endep = 1739505598 
         conf = config_loader.conf
@@ -17,6 +18,7 @@ class TestDbscan(unittest.TestCase):
                 "data_dir": "testdata/csv/20250214_1100"
             },
         }
+        config_loader.cascade_config("data_sources")
         itemIds = [59888, 93281, 94003, 110309, 141917, 217822, 236160, 217825, 270793, 270797, 217823]
 
         testlib.import_test_data(conf, itemIds, endep)

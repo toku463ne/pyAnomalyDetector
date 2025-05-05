@@ -25,10 +25,10 @@ default_chart_categories = {
 class FlaskView(View):
     def __init__(self, config: Dict, view_source: Dict, data_sources: Dict) -> None:
         self.app = Flask(__name__, template_folder=view_source.get("template_dir", "templates"))
-        self.trends_interval = config["trends_interval"]
-        self.trends_retention = config["trends_retention"]
-        self.history_interval = config["history_interval"]
-        self.history_retention = config["history_retention"]
+        self.trends_interval = view_source["trends_interval"]
+        self.trends_retention = view_source["trends_retention"]
+        self.history_interval = view_source["history_interval"]
+        self.history_retention = view_source["history_retention"]
 
 
         self.view_source = view_source

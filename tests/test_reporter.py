@@ -3,16 +3,17 @@ unit tests for zabbix_dashboard.py
 """
 import unittest
 import pandas as pd
-
-import __init__
-from models.models_set import ModelsSet
+import testlib
 import utils.config_loader as config_loader
+
+from models.models_set import ModelsSet
+#import utils.config_loader as config_loader
 import reporter
 
 class TestReporter(unittest.TestCase):  
     def test_reporter(self):
+        testlib.load_test_conf()
         config = config_loader.conf
-        
         name = "test_reporter"
         config["data_sources"] = {
             "test_reporter": {
@@ -20,6 +21,7 @@ class TestReporter(unittest.TestCase):
                 "data_dir": "testdata/csv/20250214_1100"
             }
         }
+        config_loader.cascade_config("data_sources")
 
         epochs = range(1739498400 - 3600*24*3 - 3600, 1739497800, 3600)
         itemIds = [111, 312, 333, 334]

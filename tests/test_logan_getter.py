@@ -5,38 +5,48 @@ import __init__
 
 from data_getter.logan_getter import LoganGetter
 from models.models_set import ModelsSet
+import tests.testlib as testlib
+import utils.config_loader as config_loader
+
 
 class TestLoganGetter(unittest.TestCase):
     
     def test_logan_getter(self):
+        testlib.load_test_conf()
         # csv data is in testdata/loganal/sophos
         # start a local server to serve the csv files
-        os.system('cd testdata/loganal && python3 -m http.server 8000 &')
+        os.system('cd testdata/loganal && python3 -m http.server 8200 &')
         time.sleep(1)
+        name = 'test_logan_getter'
         data_source = {
-            'name': 'test_logan_getter',
+            'name': name,
             'type': 'logan',
             'data_dir': '/tmp/anomdec_test',
-            'base_url': 'http://localhost:8000/',
+            'base_url': 'http://localhost:8200/',
             'groups': {
                 'proxy': {
-                    1: 'SOPHOS-01',
-                    2: 'pfsense67051_openvpn'
+                    1: 'proxy01',
+                    2: 'proxy02'
                 },
                 'firewall': {
-                    3: 'IMTFW001',
-                    4: 'NFPFW003',
+                    3: 'fw01',
+                    4: 'fw02',
                 },
             },
             'minimal_group_size': 10000
         }
-        ms = ModelsSet(data_source['name'])
+        config_loader.conf['data_sources'] = {}
+        config_loader.conf['data_sources'][name] = data_source
+        
+        config_loader.cascade_config("data_sources")
+        data_source = config_loader.conf['data_sources'][name]
+        ms = ModelsSet(name)
         ms.initialize()
         # remove data_dir
         if os.path.exists(data_source['data_dir']):
             os.system('rm -rf %s' % data_source['data_dir'])
         
-
+        data_source = config_loader.conf['data_sources'][data_source['name']]
         logan_getter = LoganGetter(data_source)
         self.assertIsNotNone(logan_getter)
         self.assertTrue(logan_getter.check_conn())
@@ -48,7 +58,7 @@ class TestLoganGetter(unittest.TestCase):
 
         endep = 1746108000
         startep = endep - 3600 * 3 + 1
-        itemIds = [4174353215400002, 3174353218500022, 1174353226900002]
+        itemIds = [4174353215400002, 3174353218500022, 2174353226900002]
         
         # get history
         history = logan_getter.get_history_data(startep, endep, itemIds)
@@ -89,7 +99,7 @@ class TestLoganGetter(unittest.TestCase):
         row = details[details["itemid"] == itemIds[0]]
         self.assertEqual(row["group_name"].values[0], "firewall")
         self.assertEqual(row["hostid"].values[0], 4)
-        self.assertEqual(row["host_name"].values[0], "NFPFW003")
+        self.assertEqual(row["host_name"].values[0], "fw02")
         
         os.system('pkill -f http.server')
 

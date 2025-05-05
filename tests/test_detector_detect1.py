@@ -5,6 +5,7 @@ from models.models_set import ModelsSet
 import utils.config_loader as config_loader
 from data_processing.detector import Detector
 import trends_stats
+import tests.testlib as testlib
 
 class TestDetector(unittest.TestCase):
     def run_update_test(self, name, n_expected_items, config, endep, itemIds, initialize):
@@ -31,6 +32,7 @@ class TestDetector(unittest.TestCase):
             
 
     def test_history_stats(self):
+        testlib.load_test_conf()
         name = 'test_detect1'
         ms = ModelsSet(name)
         ms.initialize()
@@ -41,6 +43,7 @@ class TestDetector(unittest.TestCase):
                 'data_dir': "testdata/csv/20250214_1100",
                 'type': 'csv'
             }
+        config_loader.cascade_config("data_sources")
         data_source = config['data_sources'][name]
         
         itemIds = [59888, 93281, 94003, 110309, 141917, 217822, 236160, 217825, 270793, 270797, 217823]

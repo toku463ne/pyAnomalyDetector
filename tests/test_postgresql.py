@@ -4,10 +4,11 @@ import os
 
 import utils.config_loader as config_loader
 import db.postgresql as pg
+import tests.testlib as testlib
 
 class TestPgSQL(unittest.TestCase):
     def test_pgsql(self):
-        config_loader.load_config()
+        testlib.load_test_conf()
         db = pg.PostgreSqlDB(config_loader.conf["admdb"])
 
         sql = "drop table if exists test_table1;"

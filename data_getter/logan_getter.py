@@ -20,7 +20,6 @@ import os
 import pandas as pd
 
 from data_getter.data_getter import DataGetter
-import utils.config_loader as config_loader
 from models.models_set import ModelsSet
 
 class LoganGetter(DataGetter):
@@ -39,8 +38,8 @@ class LoganGetter(DataGetter):
         self.itemId_map = {}
         self.ms = ModelsSet(self.data_source_name)
         self.endep = self.ms.history_updates.get_endep()
-        self.trends_interval = config_loader.conf['trends_interval']
-        self.trends_retention = config_loader.conf['trends_retention']
+        self.trends_interval = data_source_config['trends_interval']
+        self.trends_retention = data_source_config['trends_retention']
         self.startep = self.endep - self.trends_interval * self.trends_retention
         
         self.hosts = {}

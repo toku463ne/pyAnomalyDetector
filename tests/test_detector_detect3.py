@@ -5,11 +5,13 @@ from models.models_set import ModelsSet
 import utils.config_loader as config_loader
 import detect_anomalies
 import trends_stats
+import tests.testlib as testlib
 
 
 class TestDetector(unittest.TestCase):
     
     def test_history_stats(self):
+        testlib.load_test_conf()
         name = 'test_detect3'
         config = config_loader.conf
         config['data_sources'] = {}

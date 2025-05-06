@@ -3,7 +3,7 @@ import os
 
 import __init__
 import utils.config_loader as config_loader
-from data_getter.zabbix_getter import ZabbixGetter
+from data_getter.zabbix_psql_getter import ZabbixGetter
 from models.models_set import ModelsSet
 
 

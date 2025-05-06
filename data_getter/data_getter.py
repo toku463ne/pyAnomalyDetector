@@ -76,3 +76,6 @@ class DataGetter:
                     {data[int(itemId)]['host_name'][:20]}<br>
                     {data[int(itemId)]['item_name'][:20]}
     """
+
+    def check_itemId_cond(self, itemIds: List[int], item_cond: str) -> List[int]:
+        pass

@@ -14,8 +14,8 @@ logging:
   log_dir: "{{ HOME }}/anomdec/logs"
 
 data_sources:
-  zabbix: 
-    type: "zabbix"
+  zb10: 
+    type: "zabbix_psql"
     host: '{{ ZABBIX_DB_HOST }}'
     api_url: "{{ ZABBIX_API_URL }}"
     dbname: '{{ ZABBIX_DB_NAME }}'

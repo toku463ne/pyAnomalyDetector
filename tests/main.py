@@ -9,6 +9,7 @@ def run_tests():
     import tests.test_config_loader
     import tests.test_normalizer
     import tests.test_postgresql
+    import tests.test_mysql
     import tests.test_history_model
     import tests.test_anomalies_model
     import tests.test_trends_stats_model
@@ -27,6 +28,7 @@ def run_tests():
     suite.addTests(loader.loadTestsFromModule(tests.test_config_loader))
     suite.addTests(loader.loadTestsFromModule(tests.test_normalizer))
     suite.addTests(loader.loadTestsFromModule(tests.test_postgresql))
+    suite.addTests(loader.loadTestsFromModule(tests.test_mysql))
     suite.addTests(loader.loadTestsFromModule(tests.test_history_model))
     suite.addTests(loader.loadTestsFromModule(tests.test_anomalies_model))
     suite.addTests(loader.loadTestsFromModule(tests.test_trends_stats_model))

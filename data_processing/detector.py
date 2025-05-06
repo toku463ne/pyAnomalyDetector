@@ -6,7 +6,6 @@ import time
 
 
 from utils import normalizer
-import utils.config_loader as config_loader
 import data_getter
 from models.models_set import ModelsSet
 from data_processing.history_stats import HistoryStats
@@ -24,7 +23,6 @@ class Detector:
                  max_itemIds: int = 0,
                  skip_history_update: bool = False,
                  ):
-        config = config_loader.conf
         self.skip_history_update = skip_history_update
         self.batch_size = data_source['batch_size']
         self.detect1_lambda_threshold = data_source['detect1_lambda_threshold']

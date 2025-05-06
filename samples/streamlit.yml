@@ -14,7 +14,7 @@ logging:
   log_dir: "{{ HOME }}/anomdec/logs"
 
 data_sources:
-  logan:
+  log:
     type: "logan"
     name: "logan"
     base_url: '{{ LOGAN_BASE_URL }}'
@@ -28,8 +28,8 @@ data_sources:
       proxy:
         3: SOPHOS-01
         4: pfsense67051_openvpn
-  zabbix: 
-    type: "zabbix"
+  zb10: 
+    type: "zabbix_psql"
     host: '{{ ZABBIX_DB_HOST }}'
     api_url: "{{ ZABBIX_API_URL }}"
     dbname: '{{ ZABBIX_DB_NAME }}'

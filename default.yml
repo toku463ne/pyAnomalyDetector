@@ -79,7 +79,7 @@ dbscan:
   detection_period: 43200
   sigma: 2.0
   max_iterations: 100
-
+classify_period: 86400 #1day
 
 ##################################################
 #  anomaly detection params

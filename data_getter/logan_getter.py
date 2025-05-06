@@ -313,3 +313,17 @@ class LoganGetter(DataGetter):
             {data.host_name[:20]}<br>
             {data.item_name[:20]}<br>
         </a>"""
+    
+    def check_itemId_cond(self, itemIds: List[int], item_cond: str) -> List[int]:
+        item_details = self.get_items_details(itemIds)
+        if len(item_details) == 0:
+            return []
+        # item_cond is a string like "item_name == 'foo'"
+        # Use pandas query to filter
+        try:
+            filtered = item_details.query(item_cond)
+            return filtered['itemid'].tolist()
+        except Exception as e:
+            print(f"Invalid item_cond '{item_cond}': {e}")
+            return []
+        

@@ -33,7 +33,15 @@ CREATE DATABASE anomdec_test; -- optional: for unit tests
 CREATE USER anomdec WITH ENCRYPTED PASSWORD 'You password';
 GRANT ALL PRIVILEGES ON DATABASE anomdec TO anomdec;
 GRANT ALL PRIVILEGES ON DATABASE anomdec_test TO anomdec; -- optional: for unit tests
+```  
+  
+Only for testing: Create database in a MySQL table
+```sql
+CREATE DATABASE anomdec_test; -- optional: for unit tests
+CREATE USER 'anomdec'@'localhost' IDENTIFIED BY 'anomdec_pass';
+GRANT ALL PRIVILEGES ON anomdec_test.* TO 'anomdec'@'localhost';
 ```
+
 **Configure streamlit (optional)**  
 If you use streamlit, edit streamlit parameters in `scripts/setup.env` as necessary.  
   
@@ -46,7 +54,7 @@ scripts/setup.sh
 
 ## How to use
 ### Prepare yaml file
-Refer to [sample](samples/streamlit.yml) and prepare a yaml file for your envinronment.  
+Refer to [sample](samples/unified.yml) and prepare a yaml file for your envinronment.  
 The yaml file could be jinja format.  
 
 If you don't want to include sensitive data like passwords in the yaml file, you could include them in a secret file.
@@ -55,6 +63,25 @@ Configure environment variable `ANOMDEC_SECRET_PATH` to specify the secret file 
 export ANOMDEC_SECRET_PATH=/path/to/your/secretfile.yml
 ```
   
+If you use samples/unified.yml the secret file may look like
+```yaml
+ZABBIX_API_URL: http://localhost/zabbix
+ZABBIX_API_USER: your_zabbix_api_user
+ZABBIX_API_PASSWORD: your_zabbix_api_pass
+ZABBIX_PSQL_DB_HOST: localhost
+ZABBIX_PSQL_DB_NAME: your_zabbix_psql_database
+ZABBIX_PSQL_DB_USER: your_zabbix_psql_user
+ZABBIX_PSQL_DB_PASSWORD: your_zabbix_psql_user
+ZABBIX_MYSQL_DB_HOST: localhost
+ZABBIX_MYSQL_DB_NAME: your_zabbix_mysql_database
+ZABBIX_MYSQL_DB_USER: your_zabbix_mysql_user
+ZABBIX_MYSQL_DB_PASSWORD: your_zabbix_mysql_user
+ADM_DB_HOST: localhost
+ADM_DB_DB_NAME: anomdec
+ADM_DB_PASSWORD: anomdec_pass
+ADM_DB_SCHEMA: public
+LOGAN_BASE_URL: http://localhost/loganal
+```
 
 ### Collect trend data
 The first step is to prepare trend statics table in the postgresql.  

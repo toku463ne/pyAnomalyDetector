@@ -87,6 +87,9 @@ def cascade_config(target: Dict):
     for target_source_name, target_source in target_sources.copy().items():
         for key, value in conf.items():
             if key not in ["admdb", "data_sources", "logging", "view_sources"]:
+                # only cascase "item_conds", "item_diff_conds" if the target is "data_sources"
+                if key in ["item_conds", "item_diff_conds"] and target not in ["data_sources"]:
+                    continue
                 # cascade only if the key is not in the target source
                 if key not in target_source:
                     target_source[key] = value

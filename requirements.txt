@@ -18,3 +18,4 @@ fastdtw
 debugpy
 streamlit
 dotenv
+mysql-connector-python

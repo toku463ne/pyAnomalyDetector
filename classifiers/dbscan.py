@@ -12,9 +12,10 @@ def classify_charts(conf: Dict, itemIds: List[int], endep: int,
     charts = {}
     chart_stats = {}
     data_sources = conf['data_sources']
-    anomaly_keep_secs = conf.get('anomaly_keep_secs', 3600 * 24)
-    startep = endep - anomaly_keep_secs
     for data_source_name in data_sources:
+        data_source = data_sources[data_source_name]
+        classify_period = data_source.get('classify_period', 3600 * 24)
+        startep = endep - classify_period
         ms = ModelsSet(data_source_name)
         stats = ms.trends_stats.get_stats_per_itemId(itemIds=itemIds)
         chart_stats.update(stats)

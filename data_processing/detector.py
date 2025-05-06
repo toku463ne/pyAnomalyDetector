@@ -589,6 +589,7 @@ class Detector:
 
         log("inserting anomalies")
         df = dg.get_items_details(itemIds)
+        df = df[['group_name', 'hostid', 'host_name', 'itemid', 'item_name']]
         # df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
 
         if df is None or len(df) == 0:
@@ -604,7 +605,7 @@ class Detector:
         # merge with df
         df = pd.merge(df, trends_stats, on='itemid', how='inner')
         # rename columns
-        df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name', 'item_count', 'trend_mean', 'trend_std']
+        df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name', 'trend_mean', 'trend_std']
 
         df['created'] = created
         df['clusterid'] = -1

@@ -16,6 +16,10 @@ class ZabbixPSqlGetter(DataGetter):
 
     def init_data_source(self, data_source: Dict):
         self.db = PostgreSqlDB(data_source)
+        self.hstgrp_table = 'hstgrp'
+        version = self.db.select1value("dbversion", "mandatory")
+        if str(version)[0] == "3":
+            self.hstgrp_table = 'groups'
         self.api_url = data_source['api_url']
 
     def check_conn(self) -> bool:
@@ -119,7 +123,7 @@ class ZabbixPSqlGetter(DataGetter):
         where_conds = []
         # if names includes '*', convert them to '%' and use LIKE operator
         # else use '=' operator
-        names_list = [("items", item_names), ("hosts", host_names), ("hstgrp", group_names)]
+        names_list = [("items", item_names), ("hosts", host_names), (self.hstgrp_table, group_names)]
         for (table_name, names) in names_list:
             if len(names) > 0:
                 name_conds = []
@@ -147,7 +151,7 @@ class ZabbixPSqlGetter(DataGetter):
             FROM hosts 
             inner join items on hosts.hostid = items.hostid
             inner join hosts_groups on hosts_groups.hostid = hosts.hostid
-            inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
+            inner join {self.hstgrp_table} on {self.hstgrp_table}.groupid = hosts_groups.groupid 
             {where_itemIds}
             {limitcond}
         """
@@ -200,8 +204,8 @@ class ZabbixPSqlGetter(DataGetter):
                 FROM items 
                 inner join hosts on hosts.hostid = items.hostid
                 inner join hosts_groups on hosts_groups.hostid = hosts.hostid
-                inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
-                WHERE (hstgrp.name = '{group_name}' OR hstgrp.name LIKE '{group_name}/%') 
+                inner join {self.hstgrp_table} on {self.hstgrp_table}.groupid = hosts_groups.groupid 
+                WHERE ({self.hstgrp_table}.name = '{group_name}' OR {self.hstgrp_table}.name LIKE '{group_name}/%') 
                 {cond_itemIds}
             """
 
@@ -225,14 +229,14 @@ class ZabbixPSqlGetter(DataGetter):
         for name in group_names:
             where_cond = ""
             if '*' in name or '%' in name:
-                where_cond = f"hstgrp.name LIKE '{name.replace('*', '%')}'"
+                where_cond = f"{self.hstgrp_table}.name LIKE '{name.replace('*', '%')}'"
             else:
-                where_cond = f"hstgrp.name = '{name}' or hstgrp.name LIKE '{name}/%'"
+                where_cond = f"{self.hstgrp_table}.name = '{name}' or {self.hstgrp_table}.name LIKE '{name}/%'"
             sql = f"""select '{name}' as group_name, hosts.hostid, items.itemid
                 from hosts 
                 inner join items on hosts.hostid = items.hostid
                 inner join hosts_groups on hosts_groups.hostid = hosts.hostid
-                inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
+                inner join {self.hstgrp_table} on {self.hstgrp_table}.groupid = hosts_groups.groupid 
                 where {where_cond}
                 {where_itemIds}
             """
@@ -290,11 +294,11 @@ class ZabbixPSqlGetter(DataGetter):
 
     def get_items_details(self, itemIds: List[int]) -> pd.DataFrame:
         sql = f"""
-            select hstgrp.name as group_name, hosts.hostid as hostid, hosts.host as host_name, items.itemid as itemid, items.key_ item_name
+            select {self.hstgrp_table}.name as group_name, hosts.hostid as hostid, hosts.host as host_name, items.itemid as itemid, items.key_ item_name
                 from hosts 
                 inner join items on hosts.hostid = items.hostid
                 inner join hosts_groups on hosts_groups.hostid = hosts.hostid
-                inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
+                inner join {self.hstgrp_table} on {self.hstgrp_table}.groupid = hosts_groups.groupid 
                 where itemid IN ({",".join(map(str, itemIds))})
         """
 
@@ -318,8 +322,8 @@ class ZabbixPSqlGetter(DataGetter):
                 FROM hosts 
                 inner join items on hosts.hostid = items.hostid
                 inner join hosts_groups on hosts_groups.hostid = hosts.hostid
-                inner join hstgrp on hstgrp.groupid = hosts_groups.groupid 
-                WHERE (hstgrp.name = '{group_name}' OR hstgrp.name LIKE '{group_name}/%') 
+                inner join {self.hstgrp_table} on {self.hstgrp_table}.groupid = hosts_groups.groupid 
+                WHERE ({self.hstgrp_table}.name = '{group_name}' OR {self.hstgrp_table}.name LIKE '{group_name}/%') 
                 AND items.itemid IN ({",".join(map(str, itemIds))})
             """
 
@@ -347,3 +351,15 @@ class ZabbixPSqlGetter(DataGetter):
         {detail["host_name"][:50]}<br>
         {detail["item_name"][:50]}<br>
         {itemId}</a>"""
+
+
+    def get_itemId_by_cond(self, cond, limit=0) -> List[int]:
+        sql = f"SELECT itemid FROM items WHERE {cond}"
+        if limit > 0:
+            sql += f" limit {limit}"
+
+        cur = self.db.exec_sql(sql)
+        rows = cur.fetchall()
+        cur.close()
+        
+        return [row[0] for row in rows]

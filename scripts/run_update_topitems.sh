@@ -1,12 +1,11 @@
 #!/bin/bash
-# time scripts/run_update_topitems.sh samples/logan.yml $HOME/anomdec/report.json
+# time scripts/run_update_topitems.sh samples/logan.yml
 
-if [ $# -ne 2 ]; then
+if [ $# -ne 1 ]; then
     echo "Usage: $0 config_path report_path"
     exit 1
 fi
 config_path=$1
-report_path=$2
 
 source $HOME/venv/bin/activate
 if [ "$ANOMDEC_SECRET_PATH" == "" ]; then

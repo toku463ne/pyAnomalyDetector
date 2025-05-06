@@ -12,7 +12,7 @@ class TestMySQL(unittest.TestCase):
             "host": "localhost",
             "user": "anomdec",
             "password": "anomdec_pass",
-            "database": "anomdec_test"
+            "dbname": "anomdec_test"
         }
         db = my.MySqlDB(data_source)
 

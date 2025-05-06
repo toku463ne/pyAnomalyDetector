@@ -16,6 +16,10 @@ class ZabbixMySqlGetter(DataGetter):
 
     def init_data_source(self, data_source: Dict):
         self.db = MySqlDB(data_source)
+        self.hstgrp_table = 'hstgrp'
+        version = self.db.select1value("dbversion", "mandatory")
+        if str(version)[0] == "3":
+            self.hstgrp_table = 'groups'
         self.api_url = data_source['api_url']
 
     def check_conn(self) -> bool:
@@ -114,7 +118,7 @@ class ZabbixMySqlGetter(DataGetter):
                     itemIds: List[int] = [],
                     max_itemIds = 0) -> List[int]:
         where_conds = []
-        names_list = [("items", item_names), ("hosts", host_names), ("hstgrp", group_names)]
+        names_list = [("items", item_names), ("hosts", host_names), (self.hstgrp_table, group_names)]
         for (table_name, names) in names_list:
             if len(names) > 0:
                 name_conds = []
@@ -143,7 +147,7 @@ class ZabbixMySqlGetter(DataGetter):
             FROM hosts 
             INNER JOIN items ON hosts.hostid = items.hostid
             INNER JOIN hosts_groups ON hosts_groups.hostid = hosts.hostid
-            INNER JOIN hstgrp ON hstgrp.groupid = hosts_groups.groupid 
+            INNER JOIN {self.hstgrp_table} ON {self.hstgrp_table}.groupid = hosts_groups.groupid 
             {where_itemIds}
             {limitcond}
         """
@@ -191,8 +195,8 @@ class ZabbixMySqlGetter(DataGetter):
                 FROM items 
                 INNER JOIN hosts ON hosts.hostid = items.hostid
                 INNER JOIN hosts_groups ON hosts_groups.hostid = hosts.hostid
-                INNER JOIN hstgrp ON hstgrp.groupid = hosts_groups.groupid 
-                WHERE (hstgrp.name = '{group_name}' OR hstgrp.name LIKE '{group_name}/%') 
+                INNER JOIN {self.hstgrp_table} ON {self.hstgrp_table}.groupid = hosts_groups.groupid 
+                WHERE ({self.hstgrp_table}.name = '{group_name}' OR {self.hstgrp_table}.name LIKE '{group_name}/%') 
                 {cond_itemIds}
             """
             self.db.exec_sql("SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;")
@@ -214,15 +218,15 @@ class ZabbixMySqlGetter(DataGetter):
             where_itemIds = ""
         for name in group_names:
             if '*' in name or '%' in name:
-                where_cond = f"hstgrp.name LIKE '{name.replace('*', '%')}'"
+                where_cond = f"{self.hstgrp_table}.name LIKE '{name.replace('*', '%')}'"
             else:
-                where_cond = f"hstgrp.name = '{name}' OR hstgrp.name LIKE '{name}/%'"
+                where_cond = f"{self.hstgrp_table}.name = '{name}' OR {self.hstgrp_table}.name LIKE '{name}/%'"
             sql = f"""SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
                 SELECT '{name}' AS group_name, hosts.hostid, items.itemid
                 FROM hosts 
                 INNER JOIN items ON hosts.hostid = items.hostid
                 INNER JOIN hosts_groups ON hosts_groups.hostid = hosts.hostid
-                INNER JOIN hstgrp ON hstgrp.groupid = hosts_groups.groupid 
+                INNER JOIN {self.hstgrp_table} ON {self.hstgrp_table}.groupid = hosts_groups.groupid 
                 WHERE {where_cond}
                 {where_itemIds}
             """
@@ -270,11 +274,11 @@ class ZabbixMySqlGetter(DataGetter):
     def get_items_details(self, itemIds: List[int]) -> pd.DataFrame:
         sql = f"""
             SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
-            SELECT hstgrp.name AS group_name, hosts.hostid AS hostid, hosts.host AS host_name, items.itemid AS itemid, items.key_ AS item_name
+            SELECT {self.hstgrp_table}.name AS group_name, hosts.hostid AS hostid, hosts.host AS host_name, items.itemid AS itemid, items.key_ AS item_name
             FROM hosts 
             INNER JOIN items ON hosts.hostid = items.hostid
             INNER JOIN hosts_groups ON hosts_groups.hostid = hosts.hostid
-            INNER JOIN hstgrp ON hstgrp.groupid = hosts_groups.groupid 
+            INNER JOIN {self.hstgrp_table} ON {self.hstgrp_table}.groupid = hosts_groups.groupid 
             WHERE items.itemid IN ({",".join(map(str, itemIds))})
         """
         self.db.exec_sql("SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;")
@@ -293,8 +297,8 @@ class ZabbixMySqlGetter(DataGetter):
                 FROM hosts 
                 INNER JOIN items ON hosts.hostid = items.hostid
                 INNER JOIN hosts_groups ON hosts_groups.hostid = hosts.hostid
-                INNER JOIN hstgrp ON hstgrp.groupid = hosts_groups.groupid 
-                WHERE (hstgrp.name = '{group_name}' OR hstgrp.name LIKE '{group_name}/%') 
+                INNER JOIN {self.hstgrp_table} ON {self.hstgrp_table}.groupid = hosts_groups.groupid 
+                WHERE ({self.hstgrp_table}.name = '{group_name}' OR {self.hstgrp_table}.name LIKE '{group_name}/%') 
                 AND items.itemid IN ({",".join(map(str, itemIds))})
             """
             self.db.exec_sql("SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;")
@@ -316,3 +320,15 @@ class ZabbixMySqlGetter(DataGetter):
         {detail["host_name"][:50]}<br>
         {detail["item_name"][:50]}<br>
         {itemId}</a>"""
+
+
+    def get_itemId_by_cond(self, cond, limit=0) -> List[int]:
+        sql = f"SELECT itemid FROM items WHERE {cond}"
+        if limit > 0:
+            sql += f" limit {limit}"
+
+        cur = self.db.exec_sql(sql)
+        rows = cur.fetchall()
+        cur.close()
+        
+        return [row[0] for row in rows]

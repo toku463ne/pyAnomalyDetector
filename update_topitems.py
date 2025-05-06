@@ -42,7 +42,6 @@ def run(conf: Dict, endep: int = 0,
                                  itemIds=itemIds,
                                  max_itemIds=max_itemIds)
         d = Detector(data_source_name, data_source, itemIds)
-        d.initialize_data()
         group_map = {}
         if len(itemIds) > 0 and len(group_names) > 0:
             group_map = dg.get_group_map(itemIds, group_names)

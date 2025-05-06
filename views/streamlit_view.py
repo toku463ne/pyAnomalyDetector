@@ -47,7 +47,7 @@ class StreamlitView(View):
         self.chart_width = layout.get("chart_width", 600)
         self.chart_height = layout.get("chart_height", 300)
         self.chart_type = layout.get("chart_type", "line")
-        self.data_sources = view_source["data_sources"]
+        self.data_sources = config["data_sources"]
 
     def _generate_charts_in_group(self, df: pd.DataFrame, properties: Dict, titles: Dict) -> go.Figure:
         itemIds = df['itemid'].unique()
@@ -397,11 +397,11 @@ def run(config: Dict) -> None:
 
     view_source_name = query_params.get("view_source", "")
     if view_source_name == "":
-        for view_source_name, view_source in view_source["view_sources"].items():
+        for view_source_name, view_source in config["view_sources"].items():
             if view_source["type"] == "streamlit":
                 break
     else:
-        view_source = view_source["view_sources"][view_source_name]
+        view_source = config["view_sources"][view_source_name]
     
     v = StreamlitView(config, view_source)
 

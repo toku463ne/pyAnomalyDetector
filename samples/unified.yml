@@ -10,7 +10,7 @@ logging:
   enabled: true
   level: INFO
   format: "%(asctime)s %(name)s %(levelname)s | %(message)s"
-  file: "zabbix.log"
+  file: "anomdec.log"
   log_dir: "{{ HOME }}/anomdec/logs"
 
 data_sources:
@@ -46,16 +46,16 @@ data_sources:
     dbname: '{{ ZABBIX_MYSQL_DB_NAME }}'
     user: '{{ ZABBIX_MYSQL_DB_USER }}'
     password: '{{ ZABBIX_MYSQL_DB_PASSWORD }}'
-    port: 5432
+    port: 3306
     retries: 3
 
 view_sources:
   zb10:
     dashboard_name: "abnormal_check"
     type: "zabbix_dashboard"
-    api_url: "{{ ZABBIX_API_URL }}"
-    user: "{{ ZABBIX_API_USER }}"
-    password: "{{ ZABBIX_API_PASSWORD }}"
+    api_url: "{{ ZABBIX_PSQL_API_URL }}"
+    user: "{{ ZABBIX_PSQL_API_USER }}"
+    password: "{{ ZABBIX_PSQL_API_PASSWORD }}"
     data_source_name: "zabbix"
   streamlit:
     name: "streamlit"

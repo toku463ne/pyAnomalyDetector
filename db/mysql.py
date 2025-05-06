@@ -24,7 +24,7 @@ class MySqlDB:
                 host=self.config['host'],
                 user=self.config['user'],
                 password=self.config['password'],
-                database=self.config['database'],
+                database=self.config['dbname'],
                 autocommit=True
             )
             if self.conn.is_connected():

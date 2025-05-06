@@ -14,9 +14,9 @@ logging:
   log_dir: "{{ HOME }}/anomdec/logs"
 
 data_sources:
-  logan:
+  log:
     type: "logan"
-    name: "logan"
+    name: "log"
     base_url: '{{ LOGAN_BASE_URL }}'
     minimal_group_size: 1000
     data_dir: "{{ HOME }}/anomdec/logandata"
@@ -29,9 +29,9 @@ data_sources:
         4: pfsense67051_openvpn
 
 view_sources:
-  logan:
+  log:
     type: "logan"
-    name: "logan"
+    name: "log"
     port: 5000
     chart_categories:
       bycluster:

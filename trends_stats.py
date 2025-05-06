@@ -62,6 +62,7 @@ def update_stats(conf: Dict,
             diff_startep = startep
         log(f"ts.update_stats({startep}, {diff_startep}, {endep}, {oldstartep})")
         ts.update_stats(startep, diff_startep, endep, oldstartep)
+        log(f"Complated data source: {data_source_name}")
 
         ms.trends_updates.upsert_updates(startep, endep)
 

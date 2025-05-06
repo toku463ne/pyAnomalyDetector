@@ -14,14 +14,14 @@ logging:
   log_dir: "{{ HOME }}/anomdec/logs"
 
 data_sources:
-  zb10: 
-    type: "zabbix_psql"
-    host: '{{ ZABBIX_DB_HOST }}'
-    api_url: "{{ ZABBIX_API_URL }}"
-    dbname: '{{ ZABBIX_DB_NAME }}'
-    user: '{{ ZABBIX_DB_USER }}'
-    password: '{{ ZABBIX_DB_PASSWORD }}'
-    port: 5432
+  zb18: 
+    type: "zabbix_mysql"
+    host: '{{ ZABBIX_MYSQL_DB_HOST }}'
+    api_url: "{{ ZABBIX_MYSQL_API_URL }}"
+    dbname: '{{ ZABBIX_MYSQL_DB_NAME }}'
+    user: '{{ ZABBIX_MYSQL_DB_USER }}'
+    password: '{{ ZABBIX_MYSQL_DB_PASSWORD }}'
+    port: 3306
     retries: 3
     item_conds: 
       - name: ignore traffic lower than 8Mbps
@@ -89,10 +89,10 @@ data_sources:
 view_sources:
   zabbix:
     dashboard_name: "anomaly_check_new"
-    type: "zabbix_dashboard"
-    api_url: "{{ ZABBIX_API_URL }}"
-    user: "{{ ZABBIX_API_USER }}"
-    password: "{{ ZABBIX_API_PASSWORD }}"
+    type: "ZABBIX_MYSQL_dashboard"
+    api_url: "{{ ZABBIX_MYSQL_API_URL }}"
+    user: "{{ ZABBIX_MYSQL_API_USER }}"
+    password: "{{ ZABBIX_MYSQL_API_PASSWORD }}"
     data_source_name: "zabbix"
 
 group_names:

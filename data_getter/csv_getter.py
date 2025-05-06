@@ -22,7 +22,7 @@ class CsvGetter(DataGetter):
         # check if the data_dir exists
         return os.path.exists(self.data_dir)
     
-    def get_history_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+    def get_history_data(self, startep: int, endep: int, itemIds: List[int] = [], use_cache=False) -> pd.DataFrame:
         df = pd.read_csv(os.path.join(self.data_dir, self.history_filename), header=0)
         if len(df) == 0:
             return pd.DataFrame(columns=self.fields)
@@ -68,7 +68,7 @@ class CsvGetter(DataGetter):
         df = df.sort_values(['itemid', 'clock'])
         return df
     
-    def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+    def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = [], use_cache=False) -> pd.DataFrame:
         df = self.get_trends_full_data(startep, endep, itemIds)
         # convert value_avg to value
         df['value'] = df['value_avg']
@@ -77,7 +77,7 @@ class CsvGetter(DataGetter):
         return df[self.fields]
     
     
-    def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+    def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = [], use_cache=False) -> pd.DataFrame:
         df = pd.read_csv(os.path.join(self.data_dir, self.trends_filename))
         if len(df) == 0:
             return pd.DataFrame(columns=self.fields_full)

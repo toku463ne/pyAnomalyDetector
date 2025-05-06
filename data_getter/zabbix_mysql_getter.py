@@ -30,7 +30,7 @@ class ZabbixMySqlGetter(DataGetter):
             cnt += 1
         return cnt > 0
 
-    def get_history_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+    def get_history_data(self, startep: int, endep: int, itemIds: List[int] = [], use_cache=False) -> pd.DataFrame:
         if len(itemIds) > 0:
             where_itemIds = " AND itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
         else:
@@ -58,7 +58,7 @@ class ZabbixMySqlGetter(DataGetter):
         df = df.sort_values(['itemid', 'clock'])
         return df
 
-    def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+    def get_trends_data(self, startep: int, endep: int, itemIds: List[int] = [], use_cache=False) -> pd.DataFrame:
         if len(itemIds) > 0:
             where_itemIds = " AND itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
         else:
@@ -85,7 +85,7 @@ class ZabbixMySqlGetter(DataGetter):
         df = df.sort_values(['itemid', 'clock'])
         return df
 
-    def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
+    def get_trends_full_data(self, startep: int, endep: int, itemIds: List[int] = [], use_cache=False) -> pd.DataFrame:
         if len(itemIds) > 0:
             where_itemIds = " AND itemid IN (" + ",".join([str(itemid) for itemid in itemIds]) + ")"
         else:

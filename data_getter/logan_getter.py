@@ -239,14 +239,14 @@ class LoganGetter(DataGetter):
         return itemIds
 
 
-    def get_history_data(self, startep: int, endep: int, itemIds: List[int] = []) -> pd.DataFrame:
-        if endep > self.endep:
+    def get_history_data(self, startep: int, endep: int, itemIds: List[int] = [], use_cache=False) -> pd.DataFrame:
+        if endep > self.endep and use_cache == False:
             self.import_data()
         return self.ms.history.get_data(itemIds, startep, endep)
     
 
-    def get_trends_data(self, startep, endep, itemIds = []):
-        data = self.get_history_data(startep, endep, itemIds)
+    def get_trends_data(self, startep, endep, itemIds = [], use_cache=False) -> pd.DataFrame:
+        data = self.get_history_data(startep, endep, itemIds, use_cache)
         # sum values by trends_interval
         data['clock'] -= data['clock'] % self.trends_interval
         data = data.groupby(['itemid', 'clock']).agg(value=('value', 'mean'), count=('value', 'count')).reset_index()
@@ -254,8 +254,8 @@ class LoganGetter(DataGetter):
         return data
     
     
-    def get_trends_full_data(self, startep, endep, itemIds = []):
-        data = self.get_history_data(startep, endep, itemIds)
+    def get_trends_full_data(self, startep, endep, itemIds = [], use_cache=False) -> pd.DataFrame:
+        data = self.get_history_data(startep, endep, itemIds, use_cache)
         # sum values by trends_interval, use the first clock
         data['clock'] -= data['clock'] % self.trends_interval
         data = data.groupby(['itemid', 'clock']).agg({'value': ['min', 'mean', 'max']}).reset_index()

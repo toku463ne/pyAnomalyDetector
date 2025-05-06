@@ -218,8 +218,8 @@ class StreamlitView(View):
                 chart_group_name = f"{data_source_name}/{group_name}"
 
                 dg = data_getter.get_data_getter(data_source)
-                t_df = dg.get_trends_data(trend_start, history_start, itemIds_block)
-                h_df = dg.get_history_data(history_start, history_end, itemIds_block)
+                t_df = dg.get_trends_data(trend_start, history_start, itemIds_block, use_cache=True)
+                h_df = dg.get_history_data(history_start, history_end, itemIds_block, use_cache=True)
                 df = pd.concat([t_df, h_df])
                 titles_block = {}
                 for itemId in itemIds_block:
@@ -326,8 +326,8 @@ class StreamlitView(View):
         history_end = endep
 
         # Get time series data
-        t_df = dg.get_trends_data(trend_start, history_start, [itemid])
-        h_df = dg.get_history_data(history_start, history_end, [itemid])
+        t_df = dg.get_trends_data(trend_start, history_start, [itemid], use_cache=True)
+        h_df = dg.get_history_data(history_start, history_end, [itemid], use_cache=True)
         df = pd.concat([t_df, h_df])
         df = df.sort_values(by='clock')
         df['clock'] = pd.to_datetime(df['clock'], unit='s')

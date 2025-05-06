@@ -47,7 +47,7 @@ view_sources:
 #  trends: Configuration for trend analysis
 ##################################################
 trends_interval: 7200
-trends_retention: 30
+trends_retention: 240
 trends_min_count: 30
 
 ##################################################
@@ -56,3 +56,4 @@ trends_min_count: 30
 history_interval: 3600
 history_retention: 24
 history_recent_retention: 12
+classify_period: 2592000

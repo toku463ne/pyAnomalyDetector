@@ -30,6 +30,12 @@ data_sources:
     item_conds: {}
     item_diff_conds: {}
     classify_period: 2592000 #30days
+    trends_interval: 7200
+    trends_retention: 240
+    trends_min_count: 30
+    history_interval: 3600
+    history_retention: 24
+    history_recent_retention: 12
   zb10: 
     type: "zabbix_psql"
     host: '{{ ZABBIX_PSQL_DB_HOST }}'

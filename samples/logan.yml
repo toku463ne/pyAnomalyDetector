@@ -18,7 +18,7 @@ data_sources:
     type: "logan"
     name: "log"
     base_url: '{{ LOGAN_BASE_URL }}'
-    minimal_group_size: 1000
+    minimal_group_size: 10000
     data_dir: "{{ HOME }}/anomdec/logandata"
     groups:
       firewall: 
@@ -27,6 +27,7 @@ data_sources:
       proxy:
         3: SOPHOS-01
         4: pfsense67051_openvpn
+
 
 view_sources:
   log:

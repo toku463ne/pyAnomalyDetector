@@ -16,7 +16,7 @@ logging:
 data_sources:
   log:
     type: "logan"
-    name: "logan"
+    name: "lognw"
     base_url: '{{ LOGAN_BASE_URL }}'
     minimal_group_size: 1000
     data_dir: "{{ HOME }}/anomdec/logandata"

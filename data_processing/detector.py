@@ -155,8 +155,7 @@ class Detector:
         anomaly_itemIds = []
         for i in range(0, len(itemIds), batch_size):
             batch_itemIds = itemIds[i:i + batch_size]
-            t_stats = ms.trends_stats.read_stats(batch_itemIds)[['itemid', 'mean', 'std', 'cnt']]
-            batch_anomaly_itemIds = self.detect1_batch(batch_itemIds, t_stats)
+            batch_anomaly_itemIds = self.detect1_batch(batch_itemIds)
             if len(batch_anomaly_itemIds) > 0:
                 anomaly_itemIds += batch_anomaly_itemIds
 
@@ -182,15 +181,11 @@ class Detector:
             return value <= threshold
         return False
 
-
-    def detect1_batch(self, itemIds: List[int], 
-        t_stats: pd.DataFrame) -> List[int]:
+    def _get_h_stats(self, itemIds: List[int]) -> pd.DataFrame:
         ms = self.ms
-        detect1_lambda_threshold = self.detect1_lambda_threshold
         trends_min_count = self.trends_min_count
-        ignore_diff_rate = self.ignore_diff_rate
+        t_stats = ms.trends_stats.read_stats(itemIds)[['itemid', 'mean', 'std', 'cnt']]
         means = ms.history_stats.read_stats(itemIds)[['itemid', 'mean']]
-
         # get stats
         #t_stats = ms.trends_stats.read_stats(itemIds)[['itemid', 'mean', 'std', 'cnt']]
         t_stats = t_stats[t_stats['cnt'] > trends_min_count]
@@ -198,6 +193,18 @@ class Detector:
         # merge stats
         h_stats_df = pd.merge(means, t_stats, on='itemid', how='inner', suffixes=('_h', '_t'))
         h_stats_df = h_stats_df[h_stats_df['std']>0]
+
+        return h_stats_df
+
+
+    def detect1_batch(self, itemIds: List[int]) -> List[int]:
+        detect1_lambda_threshold = self.detect1_lambda_threshold
+        ignore_diff_rate = self.ignore_diff_rate
+        
+        h_stats_df = self._get_h_stats(itemIds)
+        if h_stats_df.empty:
+            return []
+        
 
         # filter h_stats_df where mean_h > mean_t + lambda1_threshold * std_t | mean_h < mean_t - lambda1_threshold * std_t
         h_stats_df = h_stats_df[(h_stats_df['mean_h'] > h_stats_df['mean_t'] + detect1_lambda_threshold * h_stats_df['std']) | (h_stats_df['mean_h'] < h_stats_df['mean_t'] - detect1_lambda_threshold * h_stats_df['std'])]
@@ -217,20 +224,24 @@ class Detector:
         itemIds = h_stats_df['itemid'].tolist()
         itemIds = list(set(itemIds))
 
-        dg = self.dg
+        itemIds = self._filter_by_conds(itemIds, h_stats_df)
+        
+        return itemIds
 
+        
+
+    def _filter_by_conds(self, itemIds: List[int], h_stats_df: pd.DataFrame) -> List[int]:
+        dg = self.dg
         # filter by defined conds
         #log(f"detector.filter_by_cond(itemIds)")
         item_conds = self.item_conds
         if len(item_conds) > 0 and len(itemIds) > 0:
             for cond in item_conds:
-                #if cond['filter'] == "key_ LIKE 'vmware.vm.guest.osuptime%'":
-                #    print("")
                 if len(itemIds) == 0:
                     break
                 itemIds2 = dg.check_itemId_cond(itemIds, cond["filter"])
                 for itemId in itemIds2:    
-                    value = means[means['itemid'] == itemId].iloc[0]['mean']
+                    value = h_stats_df[h_stats_df['itemid'] == itemId].iloc[0]['mean']
                     if self._evaluate_cond(value, cond) == False:
                         itemIds.remove(itemId)
 
@@ -632,6 +643,15 @@ class Detector:
         # get top_n items
         if top_n > 0:
             df = df.groupby('hostid', group_keys=False).apply(lambda x: x.nlargest(top_n, 'item_count')).reset_index(drop=True)
+
+        itemIds = list(set(df['itemid'].tolist()))
+
+        h_stats_df = self._get_h_stats(itemIds)
+        itemIds = self._filter_by_conds(itemIds, h_stats_df)
+        if len(itemIds) == 0:
+            return
+        # filter by itemIds
+        df = df[df['itemid'].isin(itemIds)]
 
         ms.topitems.insert_data(df)
         ms.topitems.delete_old_entries(created - self.anomaly_keep_secs)

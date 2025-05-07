@@ -313,7 +313,7 @@ class ZabbixMySqlGetter(DataGetter):
 
     def get_item_html_title(self, itemId: int, chart_type="") -> str:
         detail = self.get_item_details([itemId]).get(itemId, {"host_name": "", "item_name": ""})
-        href = f"{self.api_url}/history.php?itemids%5B0%5D={itemId}&period=now-730h"
+        href = f"{self.api_url}/history.php?itemids%5B0%5D={itemId}"
         if chart_type == "topitems":
             href += f"&chart_type={chart_type}"
         return f"""<a href="{href}" target="_blank">

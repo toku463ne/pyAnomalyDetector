@@ -29,10 +29,8 @@ data_sources:
         4: pfsense67051_openvpn
     item_conds: {}
     item_diff_conds: {}
-    classify_period: 2592000 #30days
     trends_interval: 7200
     trends_retention: 240
-    trends_min_count: 30
     history_interval: 3600
     history_retention: 24
     history_recent_retention: 12
@@ -79,6 +77,13 @@ view_sources:
       chart_height: 300
       max_vertical_charts: 4
       max_horizontal_charts: 3
+    item_conds: {}
+    item_diff_conds: {}
+    trends_interval: 7200
+    trends_retention: 240
+    history_interval: 3600
+    history_retention: 24
+    history_recent_retention: 12
 
 
 group_names:

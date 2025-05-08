@@ -17,18 +17,19 @@ data_source = {
     'type': 'logan',
     'groups': {
         'proxy': {
-            1: 'SOPHOS-01',
-            2: 'pfsense67051_openvpn'
+            1: 'proxy01',
+            2: 'proxy02'
         },
         'firewall': {
-            3: 'IMTFW001',
-            4: 'NFPFW003',
+            3: 'fw01',
+            4: 'fw02',
         },
     },
     'minimal_group_size': 10000
 }
 conf['data_sources'] = {}
 conf['data_sources'][name] = data_source
+config_loader.cascade_config("data_sources")
 
 os.system('cd testdata/loganal && python3 -m http.server 8100 &')
 time.sleep(1)

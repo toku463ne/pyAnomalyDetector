@@ -17,12 +17,12 @@ data_source = {
     'top_n': 10,
     'groups': {
         'proxy': {
-            1: 'SOPHOS-01',
-            2: 'pfsense67051_openvpn'
+            1: 'proxy01',
+            2: 'proxy02'
         },
         'firewall': {
-            3: 'IMTFW001',
-            4: 'NFPFW003',
+            3: 'fw01',
+            4: 'fw02',
         },
     },
     'minimal_group_size': 1000
@@ -33,6 +33,7 @@ time.sleep(1)
 
 conf['data_sources'] = {}
 conf['data_sources'][name] = data_source
+config_loader.cascade_config("data_sources")
 
 view_source ={
     "type": "streamlit",
@@ -57,6 +58,7 @@ view_source ={
 }
 
 conf['view_sources'] = {"test_logan": view_source}
+config_loader.cascade_config("view_sources")
 
 endep = 1746108000
 update_topitems.run(conf, endep=endep)

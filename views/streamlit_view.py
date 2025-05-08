@@ -163,17 +163,15 @@ class StreamlitView(View):
     def _generate_charts_by_category(self, categoryid: str, selected_chart_type: str) -> Dict[str, go.Figure]:
         if categoryid == CAT_BY_GROUP:
             group_key = "group_name"
-            opts = self.chart_categories[CAT_BY_GROUP]
             prop_keys = ["group_name", "host_name", "item_name", "itemid", "created", "trend_mean", "trend_std"]
-            groupby_keys = ["group_name", "hostid", "clusterid", "itemid"]
-            sort_keys = ["group_name", "hostid"]
+            #groupby_keys = ["group_name", "hostid", "clusterid", "itemid"]
+            sort_keys = ["group_name", "itemid"]
             drop_keys = ["group_name", "itemid"]
         elif categoryid == CAT_BY_CLUSTER:
             group_key = "clusterid"
-            opts = self.chart_categories[CAT_BY_CLUSTER]
             prop_keys = ["clusterid", "host_name", "item_name", "itemid", "created", "trend_mean", "trend_std"]
-            groupby_keys = ["clusterid", "hostid", "itemid"]
-            sort_keys = ["clusterid", "hostid"]
+            #groupby_keys = ["clusterid", "hostid", "itemid"]
+            sort_keys = ["clusterid", "itemid"]
             drop_keys = ["clusterid", "itemid"]
         else:
             raise ValueError(f"Unsupported categoryid: {categoryid}")
@@ -201,9 +199,17 @@ class StreamlitView(View):
             pdata = pdata.sort_values("created").drop_duplicates(subset=prop_keys[:-3], keep="last")
             properties.update(pdata.set_index("itemid").T.to_dict())
 
-            if opts.get("one_item_per_host", True):
-                groupby_keys_no_itemid = [k for k in groupby_keys if k != "itemid"]
-                data = data.groupby(groupby_keys_no_itemid).agg({"itemid": "min"}).reset_index()
+            
+            if categoryid == CAT_BY_GROUP:
+                # get min(itemid) for each group_name, hostid
+                data1 = data[data["clusterid"] != -1].groupby(group_key).agg({"itemid": "min"}).reset_index()
+                data1 = data1[drop_keys]
+
+                data2 = data[data["clusterid"] == -1].reset_index()
+                data2 = data2[drop_keys]
+                data = pd.concat([data1, data2])
+            
+
             data = data.sort_values(by=sort_keys)
             data = data[drop_keys]
             data = data.drop_duplicates(subset=drop_keys)

@@ -26,9 +26,15 @@ class ZabbixDashboard(View):
         if len(data) == 0:
             return
         # get min(itemid) for each group_name, hostid
-        data = data.groupby(["group_name", "hostid", "clusterid"]).agg({"itemid": "min"}).reset_index()
-        data = data.sort_values(by=["group_name", "hostid"])
-        data = data[["group_name", "itemid"]]
+        data1 = data[data["clusterid"] != -1].groupby(["group_name", "hostid", "clusterid"]).agg({"itemid": "min"}).reset_index()
+        data1 = data1[["group_name", "itemid"]]
+
+        data2 = data[data["clusterid"] == -1]
+        data2 = data2[["group_name", "itemid"]]
+        data = pd.concat([data1, data2])
+        data = data.sort_values(by=["group_name", "itemid"])
+        
+        # remove duplicates
         data = data.drop_duplicates(subset=["group_name", "itemid"])
 
         pagedata = {}

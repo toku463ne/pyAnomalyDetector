@@ -581,7 +581,7 @@ class Detector:
 
 
     # group_map is a dict of itemId to group_name
-    def get_items_details(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}):
+    def get_items_details(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}, top_n: int = 0) -> pd.DataFrame:
         dg = self.dg
         ms = self.ms
         if len(itemIds) == 0:
@@ -589,6 +589,10 @@ class Detector:
 
         log("inserting anomalies")
         df = dg.get_items_details(itemIds)
+        if top_n > 0:
+            df = df.groupby('hostid', group_keys=False).apply(lambda x: x.nlargest(top_n, 'item_count')).reset_index(drop=True)
+
+
         df = df[['group_name', 'hostid', 'host_name', 'itemid', 'item_name']]
         # df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']
 
@@ -638,13 +642,10 @@ class Detector:
 
     def update_topitems(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}, top_n: int = 0):
         ms = self.ms
-        df = self.get_items_details(created, itemIds, group_map)
+        df = self.get_items_details(created, itemIds, group_map, top_n=top_n)
         if df.empty:
             return
-        # get top_n items
-        if top_n > 0:
-            df = df.groupby('hostid', group_keys=False).apply(lambda x: x.nlargest(top_n, 'item_count')).reset_index(drop=True)
-
+        
         itemIds = list(set(df['itemid'].tolist()))
 
         h_stats_df = self._get_h_stats(itemIds)

@@ -3,7 +3,7 @@ import os
 
 import __init__
 import utils.config_loader as config_loader
-from data_getter.zabbix_psql_getter import ZabbixGetter
+import data_getter
 from models.models_set import ModelsSet
 
 
@@ -29,8 +29,8 @@ class ZabbixDataExporter:
                 self.data_source_name = data_source_name
                 break
 
-        self.ms = ModelsSet(self.data_source_name)
-        self.z = ZabbixGetter(self.data_source_config)
+        self.ms = ModelsSet(data_source_name)
+        self.z = data_getter.get_data_getter(data_source_config)
 
 
     def export_data(self, endep: int, itemIds: List[int]):

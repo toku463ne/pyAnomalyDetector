@@ -7,23 +7,23 @@ from models.models_set import ModelsSet
 from classifiers import *
 
 
-def classify_charts(conf: Dict, itemIds: List[int], endep: int,
-                    ) -> Tuple[Dict[int, int], Dict[int, pd.Series], Dict[int, pd.Series]]:
+def classify_charts(conf: Dict, data_source_name, 
+        itemIds: List[int], endep: int,
+        ) -> Tuple[Dict[int, int], Dict[int, pd.Series], Dict[int, pd.Series]]:
     charts = {}
     chart_stats = {}
     data_sources = conf['data_sources']
-    for data_source_name in data_sources:
-        data_source = data_sources[data_source_name]
-        classify_period = data_source.get('classify_period', 3600 * 24)
-        startep = endep - classify_period
-        ms = ModelsSet(data_source_name)
-        stats = ms.trends_stats.get_stats_per_itemId(itemIds=itemIds)
-        chart_stats.update(stats)
-        itemIds = list(stats.keys())
-        if len(itemIds) == 0:
-            continue
-        ds_chart = ms.history.get_charts(itemIds, startep, endep)
-        charts.update(ds_chart)
+    data_source = data_sources[data_source_name]
+    classify_period = data_source.get('classify_period', 3600 * 24)
+    startep = endep - classify_period
+    ms = ModelsSet(data_source_name)
+    stats = ms.trends_stats.get_stats_per_itemId(itemIds=itemIds)
+    chart_stats.update(stats)
+    itemIds = list(stats.keys())
+    if len(itemIds) == 0:
+        return {}, {}, {}
+    ds_chart = ms.history.get_charts(itemIds, startep, endep)
+    charts.update(ds_chart)
         
 
     if len(charts) > 1:

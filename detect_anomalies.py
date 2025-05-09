@@ -109,7 +109,6 @@ def run(conf: Dict, endep: int = 0,
 def classify_charts(endep: int):
     log("starting classification")
     # classify anomaly charts
-    classified_itemIds = []
     conf = config_loader.conf
     data_sources = conf['data_sources']
     for data_source_name in data_sources:
@@ -119,11 +118,10 @@ def classify_charts(endep: int):
         if len(anom_itemIds) == 0:
             continue
         d.update_history(endep, anom_itemIds)
-        classified_itemIds.extend(anom_itemIds)
-    if len(classified_itemIds) > 1:
-        log("classifying charts")
-        clusters, _, _ = dbscan.classify_charts(conf, classified_itemIds, endep=endep)
-        ModelsSet(data_source_name).anomalies.update_clusterid(clusters)
+        if len(anom_itemIds) > 1:
+            log("classifying charts")
+            clusters, _, _ = dbscan.classify_charts(conf, data_source_name, anom_itemIds, endep=endep)
+            ModelsSet(data_source_name).anomalies.update_clusterid(clusters)
     else:
         log("no anomalies")
 

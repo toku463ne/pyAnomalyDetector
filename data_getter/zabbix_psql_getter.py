@@ -36,16 +36,18 @@ class ZabbixPSqlGetter(DataGetter):
         else:
             where_itemIds = ""
         
+        startep = int(startep)
+        endep = int(endep)
         # join history and history_uint tables
         sql = f"""
             SELECT itemid, clock, value
             FROM history
-            WHERE clock BETWEEN floor({startep})::BIGINT AND floor({endep})::BIGINT
+            WHERE clock BETWEEN {startep} AND {endep}
             {where_itemIds}
             UNION ALL
             SELECT itemid, clock, value
             FROM history_uint
-            WHERE clock BETWEEN floor({startep})::BIGINT AND floor({endep})::BIGINT
+            WHERE clock BETWEEN {startep} AND {endep}
             {where_itemIds}
         """
 

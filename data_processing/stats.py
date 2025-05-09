@@ -147,6 +147,11 @@ class Stats:
         batch_size = self.data_source["batch_size"]
         itemIds = self.itemIds
 
+        startep = int(startep)
+        diff_startep = int(diff_startep)
+        endep = int(endep)
+        oldstartep = int(oldstartep)
+
         existing, nonexisting = self._separate_existing_itemIds(itemIds)
         
         # import diff for existing itemIds

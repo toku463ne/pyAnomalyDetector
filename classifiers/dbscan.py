@@ -19,7 +19,10 @@ def classify_charts(conf: Dict, itemIds: List[int], endep: int,
         ms = ModelsSet(data_source_name)
         stats = ms.trends_stats.get_stats_per_itemId(itemIds=itemIds)
         chart_stats.update(stats)
-        ds_chart = ms.history.get_charts(list(stats.keys()), startep, endep)
+        itemIds = list(stats.keys())
+        if len(itemIds) == 0:
+            continue
+        ds_chart = ms.history.get_charts(itemIds, startep, endep)
         charts.update(ds_chart)
         
 

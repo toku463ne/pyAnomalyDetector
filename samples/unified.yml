@@ -60,7 +60,7 @@ view_sources:
     api_url: "{{ ZABBIX_PSQL_API_URL }}"
     user: "{{ ZABBIX_PSQL_API_USER }}"
     password: "{{ ZABBIX_PSQL_API_PASSWORD }}"
-    data_source_name: "zabbix"
+    data_source_name: "zb10"
   streamlit:
     name: "streamlit"
     type: streamlit

@@ -259,6 +259,7 @@ class LoganGetter(DataGetter):
         # sum values by trends_interval, use the first clock
         data['clock'] -= data['clock'] % self.trends_interval
         data = data.groupby(['itemid', 'clock']).agg({'value': ['min', 'mean', 'max']}).reset_index()
+        data.columns = ['itemid', 'clock', 'value_min', 'value_avg', 'value_max']
         return data
     
 

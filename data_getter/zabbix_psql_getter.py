@@ -38,15 +38,14 @@ class ZabbixPSqlGetter(DataGetter):
         
         # join history and history_uint tables
         sql = f"""
-            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
             SELECT itemid, clock, value
             FROM history
-            WHERE clock BETWEEN {startep} AND {endep}
+            WHERE clock BETWEEN floor({startep})::BIGINT AND floor({endep})::BIGINT
             {where_itemIds}
             UNION ALL
             SELECT itemid, clock, value
             FROM history_uint
-            WHERE clock BETWEEN {startep} AND {endep}
+            WHERE clock BETWEEN floor({startep})::BIGINT AND floor({endep})::BIGINT
             {where_itemIds}
         """
 

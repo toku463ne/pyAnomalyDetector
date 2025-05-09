@@ -240,8 +240,9 @@ class Detector:
                 if len(itemIds) == 0:
                     break
                 itemIds2 = dg.check_itemId_cond(itemIds, cond["filter"])
-                for itemId in itemIds2:    
-                    value = h_stats_df[h_stats_df['itemid'] == itemId].iloc[0]['mean']
+                for itemId in itemIds2:
+                    #print(h_stats_df[h_stats_df['itemid'] == itemId].iloc[0])
+                    value = h_stats_df[h_stats_df['itemid'] == itemId].iloc[0]['mean_h']
                     if self._evaluate_cond(value, cond) == False:
                         itemIds.remove(itemId)
 
@@ -632,6 +633,9 @@ class Detector:
 
     def update_anomalies(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}):
         ms = self.ms
+        if len(itemIds) == 0:
+            return
+
         df = self.get_items_details(created, itemIds, group_map)
         if df is None or df.empty:
             return

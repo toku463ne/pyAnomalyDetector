@@ -40,12 +40,12 @@ class ZabbixMySqlGetter(DataGetter):
             SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
             SELECT itemid, clock, value
             FROM history
-            WHERE clock BETWEEN {startep} AND {endep}
+            WHERE clock BETWEEN FLOOR({startep}) AND FLOOR({endep})
             {where_itemIds}
             UNION ALL
             SELECT itemid, clock, value
             FROM history_uint
-            WHERE clock BETWEEN {startep} AND {endep}
+            WHERE clock BETWEEN FLOOR({startep}) AND FLOOR({endep})
             {where_itemIds}
         """
 

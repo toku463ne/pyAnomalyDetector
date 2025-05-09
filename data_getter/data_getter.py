@@ -79,3 +79,6 @@ class DataGetter:
 
     def check_itemId_cond(self, itemIds: List[int], item_cond: str) -> List[int]:
         pass
+
+    def get_group_map(self, itemIds: List[int], group_names: List[str]) -> Dict:
+        return {}

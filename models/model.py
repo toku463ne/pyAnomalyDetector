@@ -60,7 +60,8 @@ class Model:
         for (itemId,) in cur:
             existing.append(itemId)
 
-        nonexisting = [item for item in itemIds if item not in existing]
+        existing_set = set(existing)
+        nonexisting = [item for item in itemIds if item not in existing_set]
         return existing, nonexisting
     
     def count(self) -> int:

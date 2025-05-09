@@ -19,7 +19,8 @@ def classify_charts(conf: Dict, itemIds: List[int], endep: int,
         ms = ModelsSet(data_source_name)
         stats = ms.trends_stats.get_stats_per_itemId(itemIds=itemIds)
         chart_stats.update(stats)
-        charts.update(ms.history.get_charts(list(stats.keys()), startep, endep))
+        ds_chart = ms.history.get_charts(list(stats.keys()), startep, endep)
+        charts.update(ds_chart)
         
 
     if len(charts) > 1:
@@ -68,7 +69,8 @@ def run_dbscan(
         distance_matrix = (distance_matrix - distance_matrix.min().min()) / matrix_size
     
     # Convert chart data to a NumPy array
-    data = np.array([chart.values for chart in charts.values()])
+    aligned_charts = pd.DataFrame(charts).T  # Each row is a chart
+    data = aligned_charts.values
 
     # Run DBSCAN with precomputed distance matrix
     db = DBSCAN(eps=jaccard_eps, min_samples=min_samples, metric='precomputed').fit(distance_matrix)

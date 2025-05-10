@@ -15,7 +15,8 @@ class TestLoganGetter(unittest.TestCase):
         testlib.load_test_conf()
         # csv data is in testdata/loganal/sophos
         # start a local server to serve the csv files
-        os.system('cd testdata/loganal && python3 -m http.server 8200 &')
+        os.system('cd testdata/loganal/test1 && python3 -m http.server 8200 &')
+        os.system('cd testdata/loganal/test2 && python3 -m http.server 8201 &')
         time.sleep(1)
         name = 'test_logan_getter'
         data_source = {
@@ -25,12 +26,12 @@ class TestLoganGetter(unittest.TestCase):
             'base_url': 'http://localhost:8200/',
             'groups': {
                 'proxy': {
-                    1: 'proxy01',
-                    2: 'proxy02'
+                    1: {'name': 'proxy01', 'minimal_group_size': 100},
+                    2: {'name': 'proxy02', 'minimal_group_size': 1000}
                 },
                 'firewall': {
-                    3: 'fw01',
-                    4: 'fw02',
+                    3: {'name': 'fw01'},
+                    4: {'name': 'fw02', 'base_url': 'http://localhost:8201/'},
                 },
             },
             'minimal_group_size': 10000
@@ -58,7 +59,7 @@ class TestLoganGetter(unittest.TestCase):
 
         endep = 1746108000
         startep = endep - 3600 * 3 + 1
-        itemIds = [4174353215400002, 3174353218500022, 2174353226900002]
+        itemIds = [4174353215400002, 3174353218500022, 2174353226900002, 1174346710600004]
         
         # get history
         history = logan_getter.get_history_data(startep, endep, itemIds)
@@ -94,7 +95,7 @@ class TestLoganGetter(unittest.TestCase):
 
         details = logan_getter.get_items_details(itemIds)
         self.assertIsNotNone(details)
-        self.assertEqual(len(details), 3)
+        self.assertEqual(len(details), 4)
 
         row = details[details["itemid"] == itemIds[0]]
         self.assertEqual(row["group_name"].values[0], "firewall")

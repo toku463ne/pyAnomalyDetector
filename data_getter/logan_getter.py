@@ -44,8 +44,8 @@ class LoganGetter(DataGetter):
         
         self.hosts = {}
         for g in self.groups.values():
-            for hostid, host in g.items():
-                self.hosts[hostid] = host
+            for hostid, host_info in g.items():
+                self.hosts[hostid] = host_info
         
         self.headers = {
             'Content-Type': 'application/json',
@@ -97,8 +97,11 @@ class LoganGetter(DataGetter):
     def _get_data_by_http(self, hostid: int, file_name: str, 
                           columns: List[str],
                           write_to_csv = False) -> pd.DataFrame:
-        url = f"{self.base_url}/{self.hosts[hostid]}/{file_name}"
-        csv_path = f"{self.data_dir}/{self.hosts[hostid]}_{file_name}"
+        host_info = self.hosts[hostid]
+        host_name = host_info['name']
+        base_url = host_info.get('base_url', self.base_url)
+        url = f"{base_url}/{host_name}/{file_name}"
+        csv_path = f"{self.data_dir}/{host_name}_{file_name}"
         response = requests.get(url, headers=self.headers)
         if response.status_code == 200:
             df = pd.read_csv(url)
@@ -135,7 +138,7 @@ class LoganGetter(DataGetter):
         detaildf = lgdf[['itemid', 'text']].copy()
         detaildf['group_name'] = group_name
         detaildf['hostid'] = hostid
-        detaildf['host_name'] = self.hosts[hostid]
+        detaildf['host_name'] = self.hosts[hostid]['name']
         detaildf.columns = ['itemid', 'item_name', 'group_name', 'hostid', 'host_name']
         detaildf = detaildf[['group_name', 'hostid', 'host_name', 'itemid', 'item_name']]
         detaildf['item_count'] = lgdf['count']
@@ -156,8 +159,9 @@ class LoganGetter(DataGetter):
         lgdf = self._get_data_by_http(hostid, 'logGroups.csv', self.loggroups_fields, True)
 
         # filter by minimal_group_size
+        minimal_group_size = self.hosts[hostid].get('minimal_group_size', self.minimal_group_size)
         if len(lgdf) > 0:
-            lgdf = lgdf[lgdf['count'] >= self.minimal_group_size]
+            lgdf = lgdf[lgdf['count'] >= minimal_group_size]
 
         if len(lgdf) == 0:
             return

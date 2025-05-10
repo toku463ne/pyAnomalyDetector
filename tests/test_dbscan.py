@@ -24,6 +24,7 @@ class TestDbscan(unittest.TestCase):
         testlib.import_test_data(conf, itemIds, endep)
         clusters, centroids, chart_info = dbscan.classify_charts(
             conf,
+            "csv_datasource",
             itemIds=itemIds,
             endep=endep,
         )

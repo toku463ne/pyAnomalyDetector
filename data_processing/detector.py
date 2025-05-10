@@ -647,7 +647,8 @@ class Detector:
     def update_topitems(self, created: int, itemIds: List[int]=[], group_map: Dict[int, str] = {}, top_n: int = 0):
         ms = self.ms
         df = self.get_items_details(created, itemIds, group_map, top_n=top_n)
-        if df.empty:
+        if df is None or df.empty:
+            log("update_topitems: no data")
             return
         
         itemIds = list(set(df['itemid'].tolist()))

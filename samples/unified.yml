@@ -14,19 +14,21 @@ logging:
   log_dir: "{{ HOME }}/anomdec/logs"
 
 data_sources:
-  log:
+  lognw:
     type: "logan"
     name: "lognw"
     base_url: '{{ LOGAN_BASE_URL }}'
-    minimal_group_size: 1000
+    minimal_group_size: 10000
     data_dir: "{{ HOME }}/anomdec/logandata"
     groups:
       firewall: 
-        1: IMTFW001
-        2: NFPFW003
+        1: {"name": "IMTFW001"}
+        2: {"name": "NFPFW003"}
       proxy:
-        3: SOPHOS-01
-        4: pfsense67051_openvpn
+        3: {"name": "SOPHOS-01", "minimal_group_size": 1000}
+        4: {"name": "pfsense67051_openvpn", "minimal_group_size": 100}
+      #qa-nfrp177:
+      #  5: {"name": "common-qa-nfrp177", "base_url": "http://"}
     item_conds: {}
     item_diff_conds: {}
     trends_interval: 7200
@@ -34,6 +36,7 @@ data_sources:
     history_interval: 3600
     history_retention: 24
     history_recent_retention: 12
+    anomaly_keep_secs: 2592000 # 1month
   zb10: 
     type: "zabbix_psql"
     host: '{{ ZABBIX_PSQL_DB_HOST }}'

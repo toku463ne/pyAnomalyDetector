@@ -79,7 +79,7 @@ dbscan:
   detection_period: 43200
   sigma: 2.0
   max_iterations: 100
-classify_period: 86400 #1day
+
 
 ##################################################
 #  anomaly detection params
@@ -92,3 +92,7 @@ ignore_diff_rate: 0.2 # ignore if the peaks are just less than this rate
 anomaly_valid_count_rate: 0.8 # valid anomaly if the count is more than this rate
 anomaly_keep_secs: 86400 # 1day  
 
+##################################################
+#  topnitems
+##################################################
+top_n: 10

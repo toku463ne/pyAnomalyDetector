@@ -283,8 +283,9 @@ class LoganGetter(DataGetter):
             self.import_data()
         data ={}
         hostid = self.itemid_hostid_map[itemId]
+        host_name = self.hosts[hostid]["name"]
         file_name = "logGroups.csv"
-        loggroups_data_path = f"{self.data_dir}/{self.hosts[hostid]}_{file_name}"
+        loggroups_data_path = f"{self.data_dir}/{host_name}_{file_name}"
         if os.path.exists(loggroups_data_path):
             df = pd.read_csv(loggroups_data_path)
             df.columns = self.loggroups_fields
@@ -293,7 +294,7 @@ class LoganGetter(DataGetter):
         
 
         file_name = "logGroups_last.csv"
-        loggroups_last_data_path = f"{self.data_dir}/{self.hosts[hostid]}_{file_name}"
+        loggroups_last_data_path = f"{self.data_dir}/{host_name}_{file_name}"
         if os.path.exists(loggroups_last_data_path):
             df = pd.read_csv(loggroups_last_data_path)
             df.columns = self.last_loggroups_fields
@@ -301,7 +302,7 @@ class LoganGetter(DataGetter):
             last_data = df[df['itemid'] == itemId].to_dict(orient='records')[0]
         
         data["last_text"] = last_data["text"]
-        data["host_name"] = self.hosts[hostid]
+        data["host_name"] = self.hosts[hostid]["name"]
 
         return data
     

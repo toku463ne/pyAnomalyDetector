@@ -47,7 +47,7 @@ def run(conf: Dict, endep: int = 0,
             group_map = dg.get_group_map(itemIds, group_names)
 
         d.ms.topitems.initialize()
-        d.update_topitems(endep, itemIds, group_map=group_map, top_n=data_source.get('top_n', 0))
+        d.update_topitems(endep, itemIds, group_map=group_map, top_n=data_source.get('top_n', 10))
 
 def classify_charts(endep: int):
     log("starting classification")
@@ -63,12 +63,12 @@ def classify_charts(endep: int):
             continue
         d.update_history(endep, top_itemIds)
         classified_itemIds.extend(top_itemIds)
-    if len(classified_itemIds) > 1:
-        log("classifying charts")
-        clusters, _, _ = dbscan.classify_charts(conf, classified_itemIds, endep=endep)
-        ModelsSet(data_source_name).topitems.update_clusterid(clusters)
-    else:
-        log("no data to classify")
+        if len(classified_itemIds) > 1:
+            log("classifying charts")
+            clusters, _, _ = dbscan.classify_charts(conf, data_source_name, classified_itemIds, endep=endep)
+            ModelsSet(data_source_name).topitems.update_clusterid(clusters)
+        else:
+            log("no data to classify")
 
     log("completed")
 

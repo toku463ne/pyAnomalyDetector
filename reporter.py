@@ -51,12 +51,24 @@ if __name__ == "__main__":
     warnings.filterwarnings("ignore")
 
     args = parser.parse_args()
-    config = config_loader.load_config(args.config)
-    
-    data = report(config, args.end)
-    
-    data["has_anomalies"] = "no"
-    if len(data) > 0:
+    err = None
+    try:
+        config = config_loader.load_config(args.config)
+        
+        data = report(config, args.end)
+    except Exception as e:
+        err = e
+        import logging
+        logging.basicConfig(level=logging.ERROR)
+        logging.error(f"Error: {e}")
+        
+    if err:
+        data = {}
+        data["error"] = str(e)
+        data["has_error"] = "yes"
+    else:
+        data["has_anomalies"] = "no"
+        data["has_error"] = "no"
         for k, v in data.items():
             if k == "has_anomalies":
                 continue

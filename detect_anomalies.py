@@ -150,16 +150,33 @@ if __name__ == "__main__":
     # suppress python warnings
     import warnings
     warnings.filterwarnings("ignore")
-    config = config_loader.load_config(args.config)
 
-    if args.init:
-        init(config)
+    err = None
+    try:
+        config = config_loader.load_config(args.config)
 
-    run(config, args.end, 
-        item_names=args.items, 
-        host_names=args.hosts, 
-        group_names=args.groups,
-        itemIds=args.itemids,
-        skip_history_update=args.skip_history_update,
-    )
-    classify_charts(args.end)
+        if args.init:
+            init(config)
+
+        run(config, args.end, 
+            item_names=args.items, 
+            host_names=args.hosts, 
+            group_names=args.groups,
+            itemIds=args.itemids,
+            skip_history_update=args.skip_history_update,
+        )
+        classify_charts(args.end)
+    except Exception as e:
+        err = e
+        log(f"Error: {e}", level=logging.ERROR)
+        
+    if args.output:
+        import json
+        result = {
+            'status': 'success' if err is None else 'error',
+            'error': str(err) if err else None,
+            'config': config,
+        }
+        with open(args.output, 'w') as f:
+            json.dump(result, f)
+    log("completed")

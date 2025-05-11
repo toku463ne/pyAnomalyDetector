@@ -81,7 +81,7 @@ def load_config(config_path=None, additional_context={}) -> Dict:
 
     return conf
 
-def cascade_config(target: Dict):
+def cascade_config(target: str):
     # cascade config inside each data_source
     target_sources = conf.get(target, {})
     for target_source_name, target_source in target_sources.copy().items():

@@ -42,7 +42,7 @@ def run(conf: Dict, endep: int = 0,
         max_itemIds = 0,
         skip_history_update = False,
         detection_stages = DETECTION_STAGES
-        ) -> List[int]:
+        ) -> Dict:
 
     log("starting")
 
@@ -57,7 +57,7 @@ def run(conf: Dict, endep: int = 0,
         itemIds = conf.get('itemIds', [])
 
     data_sources = conf['data_sources']
-
+    anomalies = {}
     for data_source_name in data_sources:
         data_source = data_sources[data_source_name]
         data_source['name'] = data_source_name
@@ -101,8 +101,10 @@ def run(conf: Dict, endep: int = 0,
 
         d.update_anomalies(endep, anomaly_itemIds, group_map=group_map)
 
+        anomalies[data_source_name] = anomaly_itemIds
+
     log("completed")
-    return anomaly_itemIds
+    return anomalies
 
 
 

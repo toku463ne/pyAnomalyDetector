@@ -147,7 +147,7 @@ class CsvGetter(DataGetter):
         return groups
     
     
-    def get_items_details(self, itemIds: List[int]) -> pd.DataFrame:
+    def get_items_details(self, itemIds: List[int]=[]) -> pd.DataFrame:
         # open items.csv.gz into dataframe
         df = pd.read_csv(os.path.join(self.data_dir, self.items_filename), compression='gzip')
         df.columns = ['group_name', 'hostid', 'host_name', 'itemid', 'item_name']

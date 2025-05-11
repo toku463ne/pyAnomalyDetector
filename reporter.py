@@ -5,44 +5,37 @@ import utils.config_loader as config_loader
 import data_getter
 
 def report(conf: Dict, epoch: int) -> Dict:
-
     anomaly_keep_secs = epoch - conf['anomaly_keep_secs']
     data = {}
     data_sources = conf["data_sources"]
     for data_source_name in data_sources:
         ms = ModelsSet(data_source_name)
         # get anomaly dataframe
-        df = ms.anomalies.get_data([f"created >= {anomaly_keep_secs}",
+        anom = ms.anomalies.get_data([f"created >= {anomaly_keep_secs}",
                                     f"created <= {epoch}"])
-        if df.empty:
-            data[data_source_name] = {}
+        if anom.empty:
             continue
         
-        last_created = df["created"].max()
-        df = df[df["created"] == last_created]
-        df = df[df["clusterid"] != -1]
+        data_source = data_sources[data_source_name]
+        dg = data_getter.get_data_getter(data_source)
+        details = dg.get_items_details()
+
+        # left join anom and details
+        anom = anom.merge(details, how="left", on=["itemid", "hostid", "item_name", "host_name", "group_name"])
+
+        # group by hostid and clusterid and count per hostid and clusterid and show the first itemid
+        anom = anom.groupby(["hostid", "clusterid"]).agg({"itemid": ["count", "first"]}).reset_index()
+        # only keep groups with more than 1 itemid
+        anom = anom[anom["itemid"]["count"] > 1]
+
+        itemIds = list(set(anom["itemid"]["first"].apply(int).tolist()))
+        details = details[details["itemid"].isin(itemIds)]
+
+        # convert details to json
+        details_json = details.set_index("itemid").to_json(orient="index")
         
-        df = df.groupby(["clusterid", "hostid"]).first().reset_index()
-
-        # group by clusterid and get the count per clusterid
-        cnt = df.groupby("clusterid")["clusterid"].count()
-        # get clusterids with count > 1
-        clusterids = cnt[cnt > 1].index
-        # filter df by clusterids
-        df = df[df["clusterid"].isin(clusterids)]
-
-        data[data_source_name] = {}
-        for clusterid in clusterids:
-            data[data_source_name][clusterid] = {}
-            for _, row in df[df["clusterid"] == clusterid].iterrows():
-                group_name = row["group_name"]
-                host_name = row["host_name"]
-                if group_name not in data[data_source_name][clusterid]:
-                    data[data_source_name][clusterid][group_name] = {}
-                if host_name not in data[data_source_name][clusterid][group_name]:
-                    data[data_source_name][clusterid][group_name][host_name] = []
-                data[data_source_name][clusterid][group_name][host_name].append(f'{row["itemid"]}: {row["item_name"]}')
- 
+        data[data_source_name] = details_json
+        
     return data
 
 if __name__ == "__main__":

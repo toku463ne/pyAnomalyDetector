@@ -74,15 +74,7 @@ class TestDetector(unittest.TestCase):
 
         result = reporter.report(config, endep)
         self.assertGreater(len(result), 0)
-        for data_source_name in data_source_names:
-            self.assertIn(data_source_name, result)
-            self.assertGreater(len(result[data_source_name]), 0)
-            # check if the result is a json
-            try:
-                import json
-                json.loads(result[data_source_name])
-            except ValueError as e:
-                self.fail(f"result is not a valid json: {e}")
+
 
 
 

@@ -9,6 +9,12 @@ def str2epoch(datestr: str, format: str) -> int:
     epoch_time = int(dt.timestamp())
     return epoch_time
 
+# converts epoch time to string
+def epoch2str(epoch: int, format: str) -> str:
+    dt = datetime.fromtimestamp(epoch)
+    datestr = dt.strftime(format)
+    return datestr
+
 def ensure_dir(path):
     """Ensure that the given directory exists. Create it if it does not exist."""
     os.makedirs(path, exist_ok=True)
@@ -49,4 +55,21 @@ def get_float_format(a: np.ndarray, mask_len: int) -> int:
         return max_digit + mask_len
     
     
+def result2json(output_path="", end=0, err=None):
+    endstr = ""
+    if end == 0:
+        endstr = epoch2str(time.time(), "%Y-%m-%d %H:%M:%S")
+    else:
+        endstr = epoch2str(end, "%Y-%m-%d %H:%M:%S")
 
+    import json
+    result = {
+        'status': 'success' if err is None else 'error',
+        'error': str(err) if err else '',
+        'time': endstr
+    }
+    if output_path == "":
+        json.dumps(result, indent=4)
+    else:
+        with open(output_path, 'w') as f:
+            json.dump(result, f, indent=4)

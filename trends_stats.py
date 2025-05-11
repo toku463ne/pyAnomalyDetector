@@ -3,6 +3,7 @@ import time
 import logging
 
 import utils.config_loader as config_loader
+import utils
 from data_processing.trends_stats import TrendsStats
 from models.models_set import ModelsSet
 from models.trends_updates import TrendsUpdatesModel
@@ -75,6 +76,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--config', type=str, help='config yaml file')
     parser.add_argument('--init', action='store_true', help='If clear DB first')
+    parser.add_argument('--end', type=int, default=0, help='End epoch.')
     parser.add_argument('--output', type=str, help='output file', default="")   
     args = parser.parse_args()
 
@@ -84,19 +86,10 @@ if __name__ == "__main__":
     err = None
     try:
         config = config_loader.load_config(args.config)
-        
         update_stats(config, 0, initialize=args.init)
     except Exception as e:
         err = e
         log(f"Error: {e}", level=logging.ERROR)
 
-    if args.output:
-        import json
-        result = {
-            'status': 'success' if err is None else 'error',
-            'error': str(err) if err else None,
-            'config': config,
-        }
-        with open(args.output, 'w') as f:
-            json.dump(result, f)
+    utils.result2json(output_path=args.output, end=args.end, err=err)
     log("completed")

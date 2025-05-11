@@ -2,6 +2,7 @@ from typing import Dict, List, Tuple
 import logging
 
 import utils.config_loader as config_loader
+import utils
 import data_getter
 from data_processing.detector import Detector
 import classifiers.dbscan as dbscan
@@ -91,7 +92,6 @@ if __name__ == "__main__":
     err = None
     try:
         config = config_loader.load_config(args.config)
-
         run(config, args.end, 
             item_names=args.items, 
             host_names=args.hosts, 
@@ -103,13 +103,5 @@ if __name__ == "__main__":
         err = e
         log(f"Error: {e}", level=logging.ERROR)
 
-    if args.output:
-        import json
-        result = {
-            'status': 'success' if err is None else 'error',
-            'error': str(err) if err else None,
-            'config': config,
-        }
-        with open(args.output, 'w') as f:
-            json.dump(result, f)
+    utils.result2json(output_path=args.output, end=args.end, err=err)
     log("completed")

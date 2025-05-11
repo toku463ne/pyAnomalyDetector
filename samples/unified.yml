@@ -27,8 +27,16 @@ data_sources:
       proxy:
         3: {"name": "SOPHOS-01", "minimal_group_size": 1000}
         4: {"name": "pfsense67051_openvpn", "minimal_group_size": 100}
-      #qa-nfrp177:
-      #  5: {"name": "common-qa-nfrp177", "base_url": "http://"}
+      rp:
+        5: 
+          name: common-qa-nfrp177
+          base_url: http://192.168.88.177:9501
+          minimal_group_size: 10000
+        6: 
+          name: common-qa-rp01
+          base_url: http://10.1.247.59:9501
+          minimal_group_size: 10000
+
     item_conds: {}
     item_diff_conds: {}
     trends_interval: 7200

@@ -79,6 +79,9 @@ class AnomaliesModel(Model):
             self.db.exec_sql(sql)
 
     def update_clusterid(self, clusters: Dict):
+        sql = f"update {self.table_name} set clusterid = -1"
+        self.db.exec_sql(sql)
+
         for itemId, clusterId in clusters.items():
             sql = f"update {self.table_name} set clusterid = {clusterId} where itemid = {itemId};"
             self.db.exec_sql(sql)

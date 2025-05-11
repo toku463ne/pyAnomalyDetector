@@ -6,13 +6,13 @@ import data_getter
 
 def report(conf: Dict, epoch: int) -> Dict:
 
-    anomaly_cache_ep = epoch - conf['anomaly_keep_secs']
+    anomaly_keep_secs = epoch - conf['anomaly_keep_secs']
     data = {}
     data_sources = conf["data_sources"]
     for data_source_name in data_sources:
         ms = ModelsSet(data_source_name)
         # get anomaly dataframe
-        df = ms.anomalies.get_data([f"created >= {anomaly_cache_ep}",
+        df = ms.anomalies.get_data([f"created >= {anomaly_keep_secs}",
                                     f"created <= {epoch}"])
         if df.empty:
             data[data_source_name] = {}

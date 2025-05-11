@@ -20,4 +20,7 @@ date;time nice python3 detect_anomalies.py -c $config_path --end $end
 echo "$(date) python3 update_views.py -c $config_path"
 date;time nice python3 update_views.py -c $config_path
 
+echo "date;time nice python3 reporter.py -c $config_path --output $report_path --end $end"
+date;time nice python3 reporter.py -c $config_path --output $report_path --end $end
+
 echo completed

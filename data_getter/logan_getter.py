@@ -117,7 +117,8 @@ class LoganGetter(DataGetter):
     
     def _load_loggroups_data(self):
         for hostid in self.hosts:
-            data_path = f"{self.data_dir}/{self.hosts[hostid]}_loggroups.csv"
+            host_name = self.hosts[hostid]["name"]
+            data_path = f"{self.data_dir}/{host_name}_loggroups.csv"
             if os.path.exists(data_path):
                 df = pd.read_csv(data_path)
                 df.columns = self.loggroups_fields

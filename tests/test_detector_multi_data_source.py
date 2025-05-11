@@ -73,8 +73,7 @@ class TestDetector(unittest.TestCase):
             self.assertGreater(len(df[df.clusterid > 0]), 0)
 
         result = reporter.report(config, endep)
-        self.assertGreater(len(result), 0)
-
+        self.assertEqual(len(result["test_multi_mysql"]), 3)
 
 
 

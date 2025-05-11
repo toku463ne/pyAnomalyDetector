@@ -18,39 +18,34 @@ def report(conf: Dict, epoch: int) -> Dict:
         # get anomaly dataframe
         anom = ms.anomalies.get_data([f"created >= {startep}",
                                     f"created <= {epoch}"])
+        
+        anom = anom[["itemid", "hostid", "item_name", "host_name", "clusterid", "created"]]
+        anom = anom.drop_duplicates(subset=["itemid"])
+
         if anom.empty:
             continue
-        anom2 = anom.copy()
         
-        itemIds = list(set(anom["itemid"].tolist()))
-        data_source = data_sources[data_source_name]
-        dg = data_getter.get_data_getter(data_source)
-        details = dg.get_items_details(itemIds)
-
-        # left join anom and details
-        anom = anom.merge(details, how="left", on=["itemid", "hostid", "item_name", "host_name", "group_name"])
-
         # group by hostid and clusterid and count per hostid and clusterid and show the first itemid
-        anom = anom.groupby(["hostid", "clusterid"]).agg({"itemid": ["count", "first"]}).reset_index()
+        anom = anom.groupby(["hostid", "clusterid"]).agg({"itemid": "first", "host_name": "first", "item_name": "first", "created": "first"}).reset_index()
         # only keep groups with more than 1 itemid
         anom = anom[anom["clusterid"] != -1]
-        anom = anom[anom["itemid"]["count"] > 1]
+        
+        # group by clusterid and count
+        ganom = anom.groupby(["clusterid"]).agg({"clusterid": "count"})
+        ganom = ganom[ganom["clusterid"] > 1]
 
-        itemIds = list(set(anom["itemid"]["first"].apply(int).tolist()))
-        details = details[details["itemid"].isin(itemIds)]
-        details = details.merge(anom2, how="inner", on=["itemid", "hostid", "item_name", "host_name", "group_name"])
-        details = details.drop_duplicates(subset=["itemid"])
-
+        clusterids = list(set(ganom.index.tolist()))
+        # filter anom by clusterids
+        anom = anom[anom["clusterid"].isin(clusterids)]
+        
         # convert created(epoch) to YYYY-MM-DD HH:MM:SS
-        details["created"] = details["created"].apply(lambda x: utils.epoch2str(x, "%Y-%m-%d %H:%M:%S"))
-        details["created"] = details["created"].astype(str)
-
-        details = details[["itemid", "hostid", "item_name", "host_name", "group_name", "created", "clusterid"]]
+        anom["created"] = anom["created"].apply(lambda x: utils.epoch2str(x, "%Y-%m-%d %H:%M:%S"))
+        anom["created"] = anom["created"].astype(str)
 
         # convert details to json
-        details_json = details.set_index("itemid").to_json(orient="index")
+        anom_json = anom.set_index("itemid").to_json(orient="index")
         
-        data[data_source_name] = json.loads(details_json)
+        data[data_source_name] = json.loads(anom_json)
         
     return data
 

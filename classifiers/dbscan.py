@@ -3,28 +3,53 @@ import numpy as np
 import pandas as pd
 from sklearn.cluster import DBSCAN
 from models.models_set import ModelsSet
+import data_getter 
 
 from classifiers import *
 
+def get_chart(ms, endep, data_sources, data_source_name, itemIds) -> Dict[int, pd.Series]:        
+    data_source = data_sources[data_source_name]
+    classify_period = data_source.get('anomaly_keep_secs', 3600 * 24)
+    startep = endep - classify_period
+    trends_interval = data_source.get('trends_interval', 86400)
+    trends_retention = data_source.get('trends_retention', 14)
+    trends_startep = endep - trends_interval * trends_retention
+
+
+    dg = data_getter.get_data_getter(data_source)
+    trends_df = dg.get_trends_data(trends_startep, startep-1, itemIds)
+    hist_df = ms.history.get_charts_df(itemIds, startep, endep)
+
+    # Merge trends and history data vertically
+    df = pd.concat([trends_df, hist_df], ignore_index=True)
+
+    # order by itemid and clock
+    df = df.sort_values(by=['itemid', 'clock'])
+    
+    charts = {}
+    for _, row in df.iterrows():
+        itemId = row.itemid
+        if itemId not in charts:
+            charts[itemId] = []
+        charts[itemId].append(row["value"])
+    
+    # convert to series
+    for itemId in charts:
+        charts[itemId] = pd.Series(charts[itemId])
+    
+    return charts
 
 def classify_charts(conf: Dict, data_source_name, 
         itemIds: List[int], endep: int,
         ) -> Tuple[Dict[int, int], Dict[int, pd.Series], Dict[int, pd.Series]]:
     charts = {}
-    chart_stats = {}
     data_sources = conf['data_sources']
-    data_source = data_sources[data_source_name]
-    classify_period = data_source.get('anomaly_keep_secs', 3600 * 24)
-    startep = endep - classify_period
     ms = ModelsSet(data_source_name)
-    stats = ms.trends_stats.get_stats_per_itemId(itemIds=itemIds)
-    chart_stats.update(stats)
-    itemIds = list(stats.keys())
+    charts = get_chart(ms, endep, data_sources, data_source_name, itemIds)
+
+    chart_stats = ms.trends_stats.get_stats_per_itemId(itemIds)
     if len(itemIds) == 0:
         return {}, {}, {}
-    ds_chart = ms.history.get_charts(itemIds, startep, endep)
-    charts.update(ds_chart)
-        
 
     if len(charts) > 1:
         dbscan_conf = conf.get('dbscan', {})

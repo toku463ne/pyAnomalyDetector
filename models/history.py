@@ -67,7 +67,7 @@ class HistoryModel(Model):
         sql = f"DELETE FROM {self.table_name} WHERE itemid NOT IN ({','.join(map(str, itemIds))});"
         self.db.exec_sql(sql)
 
-    def get_charts(self, itemIds: List[int], startep: int, endep: int) -> Dict[int, pd.Series]:
+    def get_charts_df(self, itemIds: List[int], startep: int, endep: int) -> pd.DataFrame:
         itemIds = list(set(itemIds))
         sql = f"SELECT itemid, clock, value FROM {self.table_name} WHERE itemid IN ({','.join(map(str, itemIds))}) AND clock >= {startep} AND clock <= {endep} ORDER BY itemid, clock;"
         df = self.db.read_sql(sql)
@@ -75,7 +75,10 @@ class HistoryModel(Model):
             return {}
         
         df.columns = self.fields
-        
+        return df
+
+    def get_charts(self, itemIds: List[int], startep: int, endep: int) -> Dict[int, pd.Series]:
+        df = self.get_charts_df(itemIds, startep, endep)
         charts = {}
         for _, row in df.iterrows():
             itemId = row.itemid

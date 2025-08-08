@@ -56,3 +56,7 @@ class StatsModel(Model):
                 'std': float(row["std"])
             }
         return stats
+    
+    def get_itemIds(self, itemIds: List[int] = []) -> List[int]:
+        df = self.read_stats(itemIds)
+        return df['itemid'].tolist()

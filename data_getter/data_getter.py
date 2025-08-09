@@ -67,14 +67,14 @@ class DataGetter:
             "item_name": data["item_name"]
         }
     
-    def get_item_html_title(self, itemId: int) -> str:
+    def get_item_html_title(self, itemId: int, chart_type="") -> str:
         data = self.get_items_details([itemId])
         if data.empty:
             return ""
         data = data.iloc[0]
         return f"""{itemId}<br>
-                    {data[int(itemId)]['host_name'][:20]}<br>
-                    {data[int(itemId)]['item_name'][:20]}
+                    {data.host_name[:20]}<br>
+                    {data.item_name[:20]}
     """
 
     def check_itemId_cond(self, itemIds: List[int], item_cond: str) -> List[int]:

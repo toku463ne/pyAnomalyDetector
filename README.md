@@ -29,10 +29,15 @@ An item is considered "anomalous" if it meets all of the following conditions:
 Used for management and data caching.  
 ```sql
 CREATE DATABASE anomdec;
-CREATE DATABASE anomdec_test; -- optional: for unit tests
 CREATE USER anomdec WITH ENCRYPTED PASSWORD 'You password';
 GRANT ALL PRIVILEGES ON DATABASE anomdec TO anomdec;
-GRANT ALL PRIVILEGES ON DATABASE anomdec_test TO anomdec; -- optional: for unit tests
+```  
+  
+(OPTIONAL)For running tests  
+```sql
+CREATE USER anomdectest WITH ENCRYPTED PASSWORD 'anomdec_pass';
+CREATE DATABASE anomdec_test; -- optional: for unit tests
+GRANT ALL PRIVILEGES ON DATABASE anomdec_test TO anomdectest; -- optional: for unit tests
 ```  
   
 Only for testing: Create database in a MySQL table

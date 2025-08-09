@@ -310,6 +310,9 @@ class LoganGetter(DataGetter):
     def get_item_html_title(self, itemId: int, chart_type="") -> str:
         data = self.get_items_details([itemId])
         print({'itemId': itemId, 'data': data})
+        if len(data) == 0:
+            return f"{itemId}: no data"
+
         data = data.iloc[0]
         href = f"/?page=details&itemid={itemId}"
         if chart_type == "topitems":

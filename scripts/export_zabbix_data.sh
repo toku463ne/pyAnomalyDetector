@@ -1,5 +1,5 @@
 #!/bin/bash
-# time scripts/export_zabbix_data.sh -c samples/zabbix.yml -o /tmp/anomdec/$(date +"%Y%m%d")
+# time scripts/export_zabbix_data.sh -c samples/zabbix_psql.yml -o /tmp/anomdec/$(date +"%Y%m%d")
 
 source $HOME/venv/bin/activate
 if [ "$ANOMDEC_SECRET_PATH" == "" ]; then

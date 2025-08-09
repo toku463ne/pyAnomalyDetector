@@ -33,8 +33,8 @@ data_sources:
           base_url: http://192.168.88.177:9501
           minimal_group_size: 10000
         6: 
-          name: common-qa-rp01
-          base_url: http://10.1.247.59:9501
+          name: common-prod-nfrp170
+          base_url: http://192.168.88.170:9501
           minimal_group_size: 10000
 
     item_conds: {}

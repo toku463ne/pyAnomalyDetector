@@ -104,7 +104,14 @@ def classify_charts(conf: Dict, data_source_name,
     trends_df = dg.get_trends_data(trends_startep, startep-1, itemIds)
     df = pd.concat([trends_df, hist_df], ignore_index=True)
     df = df.sort_values(by=['itemid', 'clock'])
+
+
     charts = df2charts(df)
+
+    # calculate diff between current and previous values per chart
+    for itemId, series in charts.items():
+        if len(series) > 1:
+            charts[itemId] = series.diff().fillna(0)
 
     # classify each db_group by DBSCAN using correlation distance
     for label, group in db_groups.items():

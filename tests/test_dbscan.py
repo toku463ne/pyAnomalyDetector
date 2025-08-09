@@ -32,13 +32,17 @@ class TestDbscan(unittest.TestCase):
         
         # number of itemIds in clusters whose value is 1
         count = sum(1 for cluster in clusters.values() if cluster == -1)
-        self.assertEqual(count, 5)
+        self.assertEqual(count, 6)
 
         # number of itemIds in clusters whose value is 2
         count = sum(1 for cluster in clusters.values() if cluster == 1)
-        self.assertEqual(count, 4)
+        self.assertEqual(count, 3)
 
+        # number of itemIds in clusters whose value is 2
+        count = sum(1 for cluster in clusters.values() if cluster == 2)
+        self.assertEqual(count, 2)
 
+    
 
 if __name__ == '__main__':
     unittest.main()

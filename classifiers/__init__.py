@@ -54,9 +54,15 @@ def compute_jaccard_distance_matrix(charts: dict, charts_stats: dict,
 
     return pd.DataFrame(dist_matrix, index=itemids, columns=itemids)
 
-def compute_correlation_distance_matrix(charts: dict) -> pd.DataFrame:
+def compute_correlation_distance_matrix(charts: dict, diff_contribute_rate=0.5) -> pd.DataFrame:
     itemids = list(charts.keys())
     N = len(itemids)
+
+    diff_charts = {}
+    if diff_contribute_rate > 0:
+        # Preprocess: difference the series to reduce level effects
+        for itemid in itemids:
+            diff_charts[itemid] = charts[itemid].diff().dropna()
 
     # Step 1: Initialize distance matrix
     dist_matrix = np.zeros((N, N))
@@ -66,7 +72,12 @@ def compute_correlation_distance_matrix(charts: dict) -> pd.DataFrame:
         s_i, s_j = charts[id_i], charts[id_j]
 
         d_shape = correlation_distance(s_i, s_j)
-        dist_matrix[i, j] = dist_matrix[j, i] = d_shape
+        if diff_contribute_rate > 0:
+            d_shape_diff = correlation_distance(s_i, s_j)
+            d_shape = (1 - diff_contribute_rate) * d_shape + diff_contribute_rate * d_shape_diff
+        #dist_matrix[i, j] = dist_matrix[j, i] = d_shape
+        dist_matrix[i, j] = dist_matrix[j, i] = d_shape_diff* diff_contribute_rate + d_shape * (1 - diff_contribute_rate) 
+
         #logging.info(f"correlation_distance {id_i} {id_j} : {d_shape}")
 
     return pd.DataFrame(dist_matrix, index=itemids, columns=itemids)

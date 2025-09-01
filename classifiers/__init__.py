@@ -71,10 +71,13 @@ def compute_correlation_distance_matrix(charts: dict, diff_contribute_rate=0.5) 
         id_i, id_j = itemids[i], itemids[j]
         s_i, s_j = charts[id_i], charts[id_j]
 
-        d_shape = correlation_distance(s_i, s_j)
+        d_shape = 0
+        d_shape_diff = 0
+        if diff_contribute_rate < 1.0:
+            d_shape = correlation_distance(s_i, s_j)
         if diff_contribute_rate > 0:
-            d_shape_diff = correlation_distance(s_i, s_j)
-            d_shape = (1 - diff_contribute_rate) * d_shape + diff_contribute_rate * d_shape_diff
+            s_i_diff, s_j_diff = diff_charts[id_i], diff_charts[id_j]
+            d_shape_diff = correlation_distance(s_i_diff, s_j_diff)
         #dist_matrix[i, j] = dist_matrix[j, i] = d_shape
         dist_matrix[i, j] = dist_matrix[j, i] = d_shape_diff* diff_contribute_rate + d_shape * (1 - diff_contribute_rate) 
 

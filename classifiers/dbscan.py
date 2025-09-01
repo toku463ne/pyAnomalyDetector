@@ -39,7 +39,7 @@ def _run_jaccard_dbscan(sigma: float, jaccard_eps: float, min_samples: int,
 
 def _run_correlation_dbscan(eps: float, min_samples: int,
                         charts: Dict[int, pd.Series]):
-    distance_matrix = compute_correlation_distance_matrix(charts)
+    distance_matrix = compute_correlation_distance_matrix(charts, diff_contribute_rate=0.5)
     matrix_size = (distance_matrix.max().max() - distance_matrix.min().min())
     # Ensure the distance matrix values are normalized between 0 and 1
     if matrix_size > 1:
@@ -126,7 +126,7 @@ def classify_charts(conf: Dict, data_source_name,
         db_corr = _run_correlation_dbscan(
             eps=corr_eps,
             min_samples=min_samples,
-            charts={chart_id: charts[chart_id] for chart_id in group}
+            charts={chart_id: charts[chart_id] for chart_id in group},
         )
 
         # Update labels for the group

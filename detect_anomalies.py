@@ -12,6 +12,7 @@ from models.models_set import ModelsSet
 STAGE_DETECT1 = 1
 STAGE_DETECT2 = 2
 STAGE_DETECT3 = 3
+STAGE_DETECT4 = 4
 DETECTION_STAGES = [
     STAGE_DETECT1,
     STAGE_DETECT2,
@@ -83,18 +84,33 @@ def run(conf: Dict, endep: int = 0,
             if len(anomaly_itemIds) == 0:
                 log(f"no anomalies detected for {data_source_name}")
                 continue
+        if len(anomaly_itemIds) == 0:
+            continue
 
         if STAGE_DETECT2 in detection_stages or STAGE_DETECT3 in detection_stages:
             if len(anomaly_itemIds) == 0:
                 anomaly_itemIds = itemIds
             d.update_history(endep, anomaly_itemIds)
+        if len(anomaly_itemIds) == 0:
+            continue
 
         if STAGE_DETECT2 in detection_stages:
             log(f"running detect2 for {data_source_name}")
             anomaly_itemIds = d.detect2(anomaly_itemIds, endep)
+        if len(anomaly_itemIds) == 0:
+            continue
+
         if STAGE_DETECT3 in detection_stages:
             log(f"running detect3 for {data_source_name}")
-            anomaly_itemIds = d.detect3(anomaly_itemIds, endep)
+            anomaly_itemIds = d.detect3(anomaly_itemIds, endep, is_long_trend=False)
+        if len(anomaly_itemIds) == 0:
+            continue
+
+        if STAGE_DETECT4 in detection_stages:
+            log(f"running detect4 for {data_source_name}")
+            anomaly_itemIds = d.detect3(anomaly_itemIds, endep, is_long_trend=True)
+        if len(anomaly_itemIds) == 0:
+            continue
 
         group_map = {}
         if len(anomaly_itemIds) > 0 and len(group_names) > 0:

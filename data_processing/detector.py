@@ -36,6 +36,7 @@ class Detector:
         self.history_retention = int(data_source["history_retention"])
         self.history_recent_retention = int(data_source["history_recent_retention"])
         self.trends_retention = int(data_source["trends_retention"])
+        self.long_trends_retention = int(data_source.get("long_trends_retention", 60))
         self.anomaly_valid_count_rate = data_source["anomaly_valid_count_rate"]
         self.anomaly_keep_secs = int(data_source["anomaly_keep_secs"])
         
@@ -558,11 +559,14 @@ class Detector:
         return itemIds
 
     
-    def detect3(self, itemIds: List[int], endep: int) -> List[int]:
+    def detect3(self, itemIds: List[int], endep: int, is_long_trend=False) -> List[int]:
         batch_size = self.batch_size
         if len(itemIds) == 0:
             itemIds = self.itemIds
-        t_start = endep - self.trends_interval * self.trends_retention
+        if is_long_trend:
+            t_start = endep - self.trends_interval * self.long_trends_retention
+        else:
+            t_start = endep - self.trends_interval * self.trends_retention
         h_start = endep - self.history_interval * self.history_recent_retention
         base_clocks = normalizer.get_base_clocks(t_start, endep, self.history_interval)        
         log(f"detector.detect3: itemIds: {len(itemIds)}")

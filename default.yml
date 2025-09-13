@@ -27,6 +27,8 @@ admdb:
 trends_interval: 86400
 trends_retention: 14
 trends_min_count: 14
+long_trends_retention: 60
+long_trends_min_count: 40
 
 ##################################################
 #  history: Configuration for history analysis

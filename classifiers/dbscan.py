@@ -31,6 +31,14 @@ def _run_jaccard_dbscan(sigma: float, jaccard_eps: float, min_samples: int,
     if matrix_size > 1:
         distance_matrix = (distance_matrix - distance_matrix.min().min()) / matrix_size
 
+    # Handle NaN values
+    if distance_matrix.isna().any().any():
+        max_val = np.nanmax(distance_matrix.values)
+        if np.isnan(max_val):
+            max_val = 1.0
+        distance_matrix = distance_matrix.fillna(max_val)
+    np.fill_diagonal(distance_matrix.values, 0.0)
+
     # Run DBSCAN with precomputed distance matrix
     db = DBSCAN(eps=jaccard_eps, min_samples=min_samples, metric='precomputed').fit(distance_matrix)
 
@@ -45,6 +53,14 @@ def _run_correlation_dbscan(eps: float, min_samples: int,
     if matrix_size > 1:
         distance_matrix = (distance_matrix - distance_matrix.min().min()) / matrix_size
     
+    # Handle NaN values
+    if distance_matrix.isna().any().any():
+        max_val = np.nanmax(distance_matrix.values)
+        if np.isnan(max_val):
+            max_val = 1.0
+        distance_matrix = distance_matrix.fillna(max_val)
+    np.fill_diagonal(distance_matrix.values, 0.0)
+
     db = DBSCAN(eps=eps, min_samples=min_samples, metric='precomputed').fit(distance_matrix)
     return db
 

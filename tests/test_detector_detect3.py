@@ -9,7 +9,6 @@ import tests.testlib as testlib
 
 
 class TestDetector(unittest.TestCase):
-    
     def test_history_stats(self):
         testlib.load_test_conf()
         name = 'test_detect3'
@@ -17,7 +16,8 @@ class TestDetector(unittest.TestCase):
         config['data_sources'] = {}
         config['data_sources'][name] = {
                 'data_dir': "testdata/csv/20250214_1100",
-                'type': 'csv'
+                'type': 'csv',
+                'batch_size': 1000
             }
         ms = ModelsSet(name)
         ms.initialize()

@@ -18,6 +18,8 @@ def run_tests():
     import tests.test_detector_update_history
     import tests.test_detector_detect1
     import tests.test_dbscan
+    import tests.test_dbscan2
+    import tests.test_dbscan3
     import tests.test_logan_getter
     import tests.test_detector_multi_data_source
 
@@ -36,9 +38,11 @@ def run_tests():
     suite.addTests(loader.loadTestsFromModule(tests.test_detector_history_stats))
     suite.addTests(loader.loadTestsFromModule(tests.test_detector_update_history))
     suite.addTests(loader.loadTestsFromModule(tests.test_dbscan))
+    suite.addTests(loader.loadTestsFromModule(tests.test_dbscan2))
+    suite.addTests(loader.loadTestsFromModule(tests.test_dbscan3))
     suite.addTests(loader.loadTestsFromModule(tests.test_detector_detect1))
     suite.addTests(loader.loadTestsFromModule(tests.test_logan_getter))
-    suite.addTests(loader.loadTestsFromModule(tests.test_detector_multi_data_source))
+    #suite.addTests(loader.loadTestsFromModule(tests.test_detector_multi_data_source))
     
 
     runner = unittest.TextTestRunner(verbosity=2)

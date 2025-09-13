@@ -17,6 +17,7 @@ DETECTION_STAGES = [
     STAGE_DETECT1,
     STAGE_DETECT2,
     STAGE_DETECT3,
+    STAGE_DETECT4
 ]
 
 def log(msg, level=logging.INFO):

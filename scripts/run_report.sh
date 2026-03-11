@@ -8,7 +8,6 @@ fi
 config_path=$1
 report_path=$2
 
-source $HOME/venv/bin/activate
 if [ "$ANOMDEC_SECRET_PATH" == "" ]; then
     export ANOMDEC_SECRET_PATH="$HOME/.creds/anomdec.yaml"
 fi
@@ -16,7 +15,7 @@ fi
 
 end=$(date +"%s")
 end=$(expr $end - 600)
-echo date;time nice python3 reporter.py -c $config_path --output $report_path  --end $end
-date;time nice python3 reporter.py -c $config_path --output $report_path  --end $end
+echo date;time nice uv run python reporter.py -c $config_path --output $report_path  --end $end
+date;time nice uv run python reporter.py -c $config_path --output $report_path  --end $end
 
 echo completed

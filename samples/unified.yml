@@ -54,15 +54,16 @@ data_sources:
     password: '{{ ZABBIX_PSQL_DB_PASSWORD }}'
     port: 5432
     retries: 3
-  zb18: 
-    type: "zabbix_mysql"
-    host: '{{ ZABBIX_MYSQL_DB_HOST }}'
-    api_url: "{{ ZABBIX_MYSQL_API_URL }}"
-    dbname: '{{ ZABBIX_MYSQL_DB_NAME }}'
-    user: '{{ ZABBIX_MYSQL_DB_USER }}'
-    password: '{{ ZABBIX_MYSQL_DB_PASSWORD }}'
-    port: 3306
-    retries: 3
+#
+#  zb18: 
+#    type: "zabbix_mysql"
+#    host: '{{ ZABBIX_MYSQL_DB_HOST }}'
+#    api_url: "{{ ZABBIX_MYSQL_API_URL }}"
+#    dbname: '{{ ZABBIX_MYSQL_DB_NAME }}'
+#    user: '{{ ZABBIX_MYSQL_DB_USER }}'
+#    password: '{{ ZABBIX_MYSQL_DB_PASSWORD }}'
+#    port: 3306
+#    retries: 3
 
 view_sources:
   zb10:

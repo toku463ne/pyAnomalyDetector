@@ -12,9 +12,14 @@ def log(msg, level=logging.INFO):
     logging.log(level, msg)
 
 class ZabbixDashboard(View):
-    def __init__(self, config):
+    def __init__(self, config, http_proxy=None):
         self.dashboard_name = config["dashboard_name"]
         zapi = ZabbixAPI(config["api_url"])
+        if http_proxy:
+            zapi.session.proxies = {"http": http_proxy, "https": http_proxy}
+        else:
+            # unset system http proxy to avoid affecting zabbix api connection
+            zapi.session.proxies = {}
         zapi.login(config["user"], config["password"])
         self.zapi = zapi
         self.config = config

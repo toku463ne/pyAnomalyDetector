@@ -17,7 +17,7 @@ data_sources:
   zb10: 
     type: "zabbix_psql"
     host: '{{ ZABBIX_PSQL_DB_HOST }}'
-    api_url: "{{ ZABBIX_PSQL_API_URL }}"
+    api_url: "{{ ZABBIX_API_URL }}"
     dbname: '{{ ZABBIX_PSQL_DB_NAME }}'
     user: '{{ ZABBIX_PSQL_DB_USER }}'
     password: '{{ ZABBIX_PSQL_DB_PASSWORD }}'

@@ -31,6 +31,8 @@ Used for management and data caching.
 CREATE DATABASE anomdec;
 CREATE USER anomdec WITH ENCRYPTED PASSWORD 'You password';
 GRANT ALL PRIVILEGES ON DATABASE anomdec TO anomdec;
+\c anomdec
+GRANT USAGE, CREATE ON SCHEMA public TO anomdec;
 ```  
   
 (OPTIONAL)For running tests  
@@ -38,6 +40,8 @@ GRANT ALL PRIVILEGES ON DATABASE anomdec TO anomdec;
 CREATE USER anomdectest WITH ENCRYPTED PASSWORD 'anomdec_pass';
 CREATE DATABASE anomdec_test; -- optional: for unit tests
 GRANT ALL PRIVILEGES ON DATABASE anomdec_test TO anomdectest; -- optional: for unit tests
+\c anomdec_test
+GRANT USAGE, CREATE ON SCHEMA public TO anomdectest;
 ```  
   
 Only for testing: Create database in a MySQL table
@@ -72,7 +76,7 @@ If you use samples/unified.yml the secret file may look like
 ```yaml
 ZABBIX_API_URL: http://localhost/zabbix
 ZABBIX_API_USER: your_zabbix_api_user
-ZABBIX_API_PASSWORD: your_zabbix_api_pass
+ZABBIX_API_PASSWORD: your_zabbix_api_passk
 ZABBIX_PSQL_DB_HOST: localhost
 ZABBIX_PSQL_DB_NAME: your_zabbix_psql_database
 ZABBIX_PSQL_DB_USER: your_zabbix_psql_user
